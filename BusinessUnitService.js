@@ -772,11 +772,24 @@ function GetUsersOfBusinessUnits(req, res){
                     }
                     else
                     {
-                        var users = resUsers.map(function(item){
 
-                            item.userref.resourceid = item.resource_id;
-                            return item.userref;
-                        });
+                        var users = resUsers.reduce(function(arr,item,index,items){
+
+                            if(item && item.userref) {
+                                item.userref.resourceid = item.resource_id;
+                                arr.push(item.userref);
+                            }else{
+
+                                logger.error("UserAccount found without account reference");
+                            }
+                            return arr;
+
+                        },[]);
+                        // var users = resUsers.map(function(item){
+                        //
+                        //     item.userref.resourceid = item.resource_id;
+                        //     return item.userref;
+                        // });
                         jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, users);
                         logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  User searching Succeeded ");
                         res.end(jsonString);
