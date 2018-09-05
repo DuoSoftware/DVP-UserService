@@ -173,7 +173,7 @@ function CreateExternalUser(req, res) {
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
 
-    if (req.body && req.body.firstname && req.body.lastname && req.body.phone && req.body.email) {
+    if (req.body && req.body.firstname && req.body.lastname && req.body.phone ) {
         var extUser = ExternalUser({
             title: req.body.title,
             name: req.body.name,
