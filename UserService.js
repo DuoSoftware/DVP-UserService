@@ -103,6 +103,7 @@ redisClient.on('error', function (err) {
 
 function GetUsers(req, res) {
 
+    logger.debug("DVP-UserService.GetUsers Internal method ");
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -120,7 +121,10 @@ function GetUsers(req, res) {
     }
 
 
-    UserAccount.find(queryString).populate('userref', '-password')
+    UserAccount
+        .find(queryString)
+        .populate('userref', '-password')
+        .lean()
         .exec(function (err, userAccounts) {
             if (err) {
 
@@ -132,7 +136,7 @@ function GetUsers(req, res) {
 
                     var users = userAccounts.reduce(function (result, userAccount) {
                         if(userAccount.userref) {
-                            var user = userAccount.userref.toObject();
+                            var user = userAccount.userref;
 
                             user.group = userAccount.group;
                             user.Active = userAccount.active;
@@ -200,7 +204,7 @@ function GetUsers(req, res) {
 function GetUser(req, res) {
 
 
-    logger.debug("DVP-UserService.GetUsers Internal method ");
+    logger.debug("DVP-UserService.GetUser Internal method ");
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
