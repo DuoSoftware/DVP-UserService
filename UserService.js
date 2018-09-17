@@ -104,6 +104,47 @@ redisClient.on('error', function (err) {
 function GetUsers(req, res) {
 
     logger.debug("DVP-UserService.GetUsers Internal method ");
+    var executeFunc = function (err, userAccounts) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+
+        } else {
+
+            if (userAccounts && Array.isArray(userAccounts)) {
+
+                var users = userAccounts.reduce(function (result, userAccount) {
+                    if (userAccount.userref) {
+                        var user = userAccount.userref;
+
+                        user.group = userAccount.group;
+                        user.Active = userAccount.active;
+                        user.joined = userAccount.joined;
+                        user.resourceid = userAccount.resource_id;
+                        user.veeryaccount = userAccount.veeryaccount;
+                        user.multi_login = userAccount.multi_login;
+                        user.allowoutbound = userAccount.allowoutbound;
+                        user.allowed_file_categories = userAccount.allowed_file_categories;
+                        user.user_meta = userAccount.user_meta;
+
+                        result.push(user);
+
+                    }
+
+                    return result;
+
+                }, []);
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+
+            }
+        }
+
+        res.end(jsonString);
+    }
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -150,47 +191,7 @@ function GetUsers(req, res) {
             .exec(executeFunc);
     }
 
-    var executeFunc = function (err, userAcount) {
-        if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
-
-        } else {
-
-            if (userAccounts && Array.isArray(userAccounts)) {
-
-                var users = userAccounts.reduce(function (result, userAccount) {
-                    if (userAccount.userref) {
-                        var user = userAccount.userref;
-
-                        user.group = userAccount.group;
-                        user.Active = userAccount.active;
-                        user.joined = userAccount.joined;
-                        user.resourceid = userAccount.resource_id;
-                        user.veeryaccount = userAccount.veeryaccount;
-                        user.multi_login = userAccount.multi_login;
-                        user.allowoutbound = userAccount.allowoutbound;
-                        user.allowed_file_categories = userAccount.allowed_file_categories;
-                        user.user_meta = userAccount.user_meta;
-
-                        result.push(user);
-
-                    }
-
-                    return result;
-
-                }, []);
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
-
-            } else {
-
-                jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
-
-            }
-        }
-
-        res.end(jsonString);
-    }
 
 
 
