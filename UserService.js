@@ -217,8 +217,6 @@ function GetUserCount(req, res) {
 
     UserAccount
         .count(queryString)
-        .populate('userref', '-password')
-        .lean()
         .exec(function (err, resCount) {
             if (err) {
                 jsonString = messageFormatter.FormatMessage(err, "Get Users  failed", false, undefined);
@@ -227,7 +225,7 @@ function GetUserCount(req, res) {
                 jsonString = messageFormatter.FormatMessage(undefined, "Get Users count Successful", true, resCount);
             }
 
-            res.end(resCount);
+            res.end(jsonString)
         });
 
 }
