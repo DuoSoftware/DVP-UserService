@@ -100,9 +100,9 @@ redisClient.on('error', function (err) {
     console.log('Error '.red, err);
 });
 
-
 function GetUsers(req, res) {
 
+    logger.debug("DVP-UserService.GetUsers Internal method ");
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
@@ -120,7 +120,10 @@ function GetUsers(req, res) {
     }
 
 
-    UserAccount.find(queryString).populate('userref', '-password')
+    UserAccount
+        .find(queryString)
+        .populate('userref', '-password')
+        .lean()
         .exec(function (err, userAccounts) {
             if (err) {
 
@@ -130,9 +133,9 @@ function GetUsers(req, res) {
 
                 if (userAccounts && Array.isArray(userAccounts) ) {
 
-                    var users = userAccounts.map(function (userAccount) {
+                    var users = userAccounts.reduce(function (result, userAccount) {
                         if(userAccount.userref) {
-                            var user = userAccount.userref.toObject();
+                            var user = userAccount.userref;
 
                             user.group = userAccount.group;
                             user.Active = userAccount.active;
@@ -144,10 +147,13 @@ function GetUsers(req, res) {
                             user.allowed_file_categories = userAccount.allowed_file_categories;
                             user.user_meta = userAccount.user_meta;
 
-                            return user;
+                            result.push(user) ;
+
                         }
 
-                    });
+                        return result;
+
+                    }, []);
                     jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
 
                 } else {
@@ -161,6 +167,68 @@ function GetUsers(req, res) {
         });
 
 }
+
+
+// function GetUsers(req, res) {
+//
+//
+//     var company = parseInt(req.user.company);
+//     var tenant = parseInt(req.user.tenant);
+//
+//     var filterActive = req.query.active;
+//     var jsonString;
+//     var queryString;
+//
+//     if (filterActive === 'all') {
+//         queryString = {company: company, tenant: tenant};
+//     } else if (filterActive === 'false') {
+//         queryString = {company: company, tenant: tenant, active: false};
+//     } else {
+//         queryString = {company: company, tenant: tenant, active: true};
+//     }
+//
+//
+//     UserAccount.find(queryString).populate('userref', '-password')
+//         .exec(function (err, userAccounts) {
+//             if (err) {
+//
+//                 jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+//
+//             } else {
+//
+//                 if (userAccounts && Array.isArray(userAccounts) ) {
+//
+//                     var users = userAccounts.map(function (userAccount) {
+//                         if(userAccount.userref) {
+//                             var user = userAccount.userref.toObject();
+//
+//                             user.group = userAccount.group;
+//                             user.Active = userAccount.active;
+//                             user.joined = userAccount.joined;
+//                             user.resourceid = userAccount.resource_id;
+//                             user.veeryaccount = userAccount.veeryaccount;
+//                             user.multi_login = userAccount.multi_login;
+//                             user.allowoutbound = userAccount.allowoutbound;
+//                             user.allowed_file_categories = userAccount.allowed_file_categories;
+//                             user.user_meta = userAccount.user_meta;
+//
+//                             return user;
+//                         }
+//
+//                     });
+//                     jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+//
+//                 } else {
+//
+//                     jsonString = messageFormatter.FormatMessage(undefined, "Get Users Failed", false, undefined);
+//
+//                 }
+//             }
+//
+//             res.end(jsonString);
+//         });
+//
+// }
 
 // function GetExternalUsers(req, res){
 //
