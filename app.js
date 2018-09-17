@@ -199,6 +199,7 @@ app.get('/DVP/API/:version/Owner/:name/exists', userService.OwnerExists);
 
 
 app.get('/DVP/API/:version/Users', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsers);
+app.get('/DVP/API/:version/UserCount', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUserCount);
 app.get('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUser);
 app.get('/DVP/API/:version/User/:name/Operations/:Action', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserIsAllowToOutbound);
 app.get('/DVP/API/:version/UsersByIds', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsersByIDs);
