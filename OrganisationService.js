@@ -1352,10 +1352,11 @@ function UpdateUser(userAccountId, vPackage){
             var er = ExtractResources(vPackage.resources);
             er.on('endExtractResources', function(userScopes){
                 userScopes = userScopes.concat(fixUserScopes);
+
                 var uScopes = UniqueObjectArray(userScopes,"scope");
                 if(uScopes) {
                     for (var i = 0; i < uScopes.length; i++) {
-                        var eUserScope = FilterObjFromArray(userAccount.user_scopes, "scope", uScopes[i]);
+                        var eUserScope = FilterObjFromArray(userAccount.user_scopes, "scope", uScopes[i].scope);
                         if (eUserScope) {
                             if (uScopes[i].read && (!eUserScope.read || eUserScope.read == false)) {
                                 eUserScope.read = uScopes[i].read;
