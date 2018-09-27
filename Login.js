@@ -553,9 +553,11 @@ module.exports.Login =  function(req, res) {
         if (user && !user.Active) {
             return res.status(401).send({message: 'User account deactivated, Please activate your account before login'});
         }
-
-        var companyReg = ["^",req.body.companyName,"$"].join('');
-        Org.findOne({"companyName": {$regex: companyReg, $options: "i"}}, function (err, org) {
+       
+        // removed companyName from login payload - 27/10/18
+        // var companyReg = ["^",req.body.companyName,"$"].join('');
+        // {"companyName": {$regex: companyReg, $options: "i"}
+        Org.findOne({"ownerId": user.username|| ""}}, function (err, org) {
             if(err){
                 return res.status(401).send({message: 'Company verification failed'});
             }
