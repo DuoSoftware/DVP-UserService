@@ -557,7 +557,7 @@ module.exports.Login =  function(req, res) {
         // removed companyName from login payload - 27/10/18
         // var companyReg = ["^",req.body.companyName,"$"].join('');
         // {"companyName": {$regex: companyReg, $options: "i"}
-        Org.findOne({"ownerId": user.username || ""}), function (err, org) {
+        Org.findOne({"ownerId": user.username || ""}, function (err, org) {
             if(err){
                 return res.status(401).send({message: 'Company verification failed'});
             }
