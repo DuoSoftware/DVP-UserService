@@ -1435,6 +1435,14 @@ function UpdateUser(userAccountId, vPackage){
                         }
                     }
                     userAccount.user_scopes = UniqueObjectArray(userAccount.user_scopes,"scope");
+
+                    //set the digin templates to the user.
+                    userAccount.app_meta = userAccount.app_meta || {};
+                    var userSharedRes = userAccount.app_meta.sharedResources || {};
+                    
+                    userSharedRes = Object.assign(userSharedRes, vPackage.sharedResources)
+                    userAccount.app_meta['sharedResources'] = userSharedRes;
+
                     UserAccount.findOneAndUpdate({_id: userAccountId}, userAccount, function (err, rUser) {
                         if (err) {
                             jsonString = messageFormatter.FormatMessage(err, "Update User Scopes Failed", false, undefined);
