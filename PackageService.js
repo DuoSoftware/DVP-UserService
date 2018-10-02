@@ -134,6 +134,7 @@ function CreatePackage(req, res){
         description: req.body.description,
         consoleAccessLimit: req.body.consoleAccessLimit,
         veeryTask: req.body.veeryTask,
+        diginTemplates: req.body.diginTemplates,
         billingType: req.body.billingType,
         price: req.body.price,
         setupFee: req.body.setupFee,
