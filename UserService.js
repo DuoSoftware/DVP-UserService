@@ -4543,7 +4543,7 @@ module.exports.CreateReportUser = CreateReportUser;
 
 module.exports.GetUserCount = GetUserCount;
 
-
-
+module.exports.RedisCon = redisClient;
+module.exports.DbConn = DbConn.SequelizeConn;
 /*
  module.exports.AddFileCategoriesToUser = AddFileCategoriesToUser;*/

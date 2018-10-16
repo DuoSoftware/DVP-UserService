@@ -37,7 +37,8 @@ var secret = require('dvp-common/Authentication/Secret.js');
 var authorization = require('dvp-common/Authentication/Authorization.js');
 var Login = require("./Login");
 var ActiveDirectory = require('./ActiveDirectoryService');
-var UserInvitationService = require("./UserInvitationService")
+var UserInvitationService = require("./UserInvitationService");
+var healthcheck = require('dvp-healthcheck/DBHealthChecker');
 
 // tenant operations
 var tenantService=require("./TenantService");
@@ -160,6 +161,8 @@ app.use(cookieParser());
 app.use(errorhandler({ dumpExceptions: true, showStack: true }));
 app.use(cors());
 
+var hc = new healthcheck(app, {redis: userService.RedisCon, pg: userService.DbConn, mongo: mongoose.connection});
+hc.Initiate();
 
 
 
