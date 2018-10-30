@@ -162,7 +162,7 @@ app.use(cookieParser());
 app.use(errorhandler({ dumpExceptions: true, showStack: true }));
 app.use(cors());
 
-var hc = new healthcheck(app, {redis: userService.RedisCon, pg: userService.DbConn, mongo: mongoose.connection});
+var hc = new healthcheck(app, {redis: userService.RedisCon, pg: userService.DbConn, mongo: mongomodels.connection});
 hc.Initiate();
 
 
