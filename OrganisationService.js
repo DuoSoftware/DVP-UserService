@@ -1527,8 +1527,9 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
                                             {scope: "resource", read: true},
                                             {scope: "package", read: true},
                                             {scope: "console", read: true},
-                                            {"scope": "myNavigation", "read": true},
-                                            {"scope": "myUserProfile", "read": true}
+                                            {scope: "myNavigation", read: true},
+                                            {scope: "myUserProfile", read: true},
+                                            {scope: "user", read: true, write: true}
                                         ],
                                         created_at: Date.now(),
                                         updated_at: Date.now(),

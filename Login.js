@@ -1835,15 +1835,16 @@ module.exports.Facebook = function(req, res) {
                             user.company = 0;
                             user.tenant = 1;
                             user.systemuser = true,
-                                user.username = profile.email;
+                            user.username = profile.email;
                             user.user_meta = {role: "admin"};
                             user.user_scopes = [
                                 {scope: "organisation", read: true, write: true},
                                 {scope: "resource", read: true},
                                 {scope: "package", read: true},
                                 {scope: "console", read: true},
-                                {"scope": "myNavigation", "read": true},
-                                {"scope": "myUserProfile", "read": true}
+                                {scope: "myNavigation", read: true},
+                                {scope: "myUserProfile", read: true},
+                                {scope: "user", read: true, write:true}
                             ];
 
 
@@ -1855,6 +1856,48 @@ module.exports.Facebook = function(req, res) {
                                     orgService.CreateOrganisationStanAlone(user,profile.email, defaultTimezone,function(err, rUser){
 
                                         if(!err && rUser ){
+
+                                            Org.findOne({"ownerId": profile.email || ""}, function (err, org) {
+                                                if(err){
+                                                    return res.status(401).send({message: 'Company verification failed'});
+                                                }
+            
+                                                if(!org){
+                                                    return res.status(401).send({message: 'Invalid organization name'});
+                                                }
+
+                                                if (org && org.companyEnabled) {
+                                                    UserAccount.findOne({"tenant": org.tenant, "company": org.id, "user": profile.email}, function (err, account) {
+                                                        if (err) {
+                                                            return res.status(401).send({message: 'User account verification failed'});
+                                                        }
+            
+                                                        if (!account) {
+                                                            return res.status(401).send({message: 'Invalid user account'});
+                                                        }
+            
+                                                        rUser._doc.tenant = org.tenant;
+                                                        rUser._doc.company = org.id;
+                                                        rUser._doc.companyName = org.companyName;
+                                                        rUser._doc.multi_login = account.multi_login;
+                                                        rUser._doc.user_meta = account.user_meta;
+                                                        rUser._doc.app_meta = account.app_meta;
+                                                        rUser._doc.user_scopes = account.user_scopes;
+                                                        rUser._doc.client_scopes = account.client_scopes;
+                                                        rUser._doc.resourceid = account.resource_id;
+                                                        rUser._doc.veeryaccount = account.veeryaccount;
+                                                        rUser._doc.multi_login = account.multi_login;
+
+                                                        GetJWT(rUser,claims_arr,req.body.clientId,'oauth-facebook',req, function(err, isSuccess, token){
+                                                            if(token) {
+                                                                return res.send({state: "new", token: token});
+                                                            }else {
+                                                                return res.status(401).send({message: 'Invalid email and/or password'});
+                                                            }
+                                                        })
+                                                    });
+                                                }
+                                            })
 
                                             //var token = GetJWT(rUser,["all_all"]);
                                             //res.send({state: "new", token: token});
@@ -1873,27 +1916,27 @@ module.exports.Facebook = function(req, res) {
 
 
 
-                                            GetJWT(rUser,claims_arr,req.body.clientId,'oauth-facebook',req, function(err, isSuccess, token){
+                                            // GetJWT(rUser,claims_arr,req.body.clientId,'oauth-facebook',req, function(err, isSuccess, token){
 
-                                                if(token){
+                                            //     if(token){
 
-                                                    var sendObj = {
-                                                        "company": config.Tenant.activeCompany,
-                                                        "tenant": config.Tenant.activeTenant
-                                                    };
+                                            //         // var sendObj = {
+                                            //         //     "company": config.Tenant.activeCompany,
+                                            //         //     "tenant": config.Tenant.activeTenant
+                                            //         // };
 
-                                                    sendObj.to =  profile.email;
-                                                    sendObj.from = "no-reply";
-                                                    sendObj.template = "By-User Registration Success";
-                                                    sendObj.Parameters = user;
+                                            //         // sendObj.to =  profile.email;
+                                            //         // sendObj.from = "no-reply";
+                                            //         // sendObj.template = "By-User Registration Success";
+                                            //         // sendObj.Parameters = rUser;
 
-                                                    PublishToQueue("EMAILOUT", sendObj);
+                                            //         // PublishToQueue("EMAILOUT", sendObj);
 
-                                                    return res.send({state: "new", token: token});
-                                                }else{
-                                                    return res.status(401).send({message: 'Invalid email and/or password'});
-                                                }
-                                            });
+                                            //         return res.send({state: "new", token: token});
+                                            //     }else{
+                                            //         return res.status(401).send({message: 'Invalid email and/or password'});
+                                            //     }
+                                            // });
 
 
                                         }else{
@@ -1915,12 +1958,46 @@ module.exports.Facebook = function(req, res) {
                             if (existingUser) {
                                 //return res.send({state: 'existing', token: GetJWT(existingUser, claims_arr)});
 
-                                GetJWT(existingUser,claims_arr,req.body.clientId,'oauth-facebook', req,function(err, isSuccess, token){
+                                Org.findOne({"ownerId": profile.email || ""}, function (err, org) {
+                                    if(err){
+                                        return res.status(401).send({message: 'Company verification failed'});
+                                    }
 
-                                    if(token){
-                                        return res.send({state: "existing", token: token});
-                                    }else{
-                                        return res.status(401).send({message: 'Invalid email and/or password'});
+                                    if(!org){
+                                        return res.status(401).send({message: 'Invalid organization name'});
+                                    }
+
+                                    if (org && org.companyEnabled) {
+                                        UserAccount.findOne({"tenant": org.tenant, "company": org.id, "user": profile.email}, function (err, account) {
+                                            if (err) {
+                                                return res.status(401).send({message: 'User account verification failed'});
+                                            }
+
+                                            if (!account) {
+                                                return res.status(401).send({message: 'Invalid user account'});
+                                            }
+
+                                            existingUser._doc.tenant = org.tenant;
+                                            existingUser._doc.company = org.id;
+                                            existingUser.companyName = org.companyName;
+                                            existingUser._doc.multi_login = account.multi_login;
+                                            existingUser._doc.user_meta = account.user_meta;
+                                            existingUser._doc.app_meta = account.app_meta;
+                                            existingUser._doc.user_scopes = account.user_scopes;
+                                            existingUser._doc.client_scopes = account.client_scopes;
+                                            existingUser._doc.resourceid = account.resource_id;
+                                            existingUser._doc.veeryaccount = account.veeryaccount;
+                                            existingUser._doc.multi_login = account.multi_login;
+
+                                            GetJWT(existingUser,claims_arr,req.body.clientId,'oauth-facebook', req,function(err, isSuccess, token){
+
+                                                if(token){
+                                                    return res.send({state: "existing", token: token});
+                                                }else{
+                                                    return res.status(401).send({message: 'Invalid email and/or password'});
+                                                }
+                                            });
+                                        });
                                     }
                                 });
 
