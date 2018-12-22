@@ -1570,6 +1570,7 @@ function GetMyrProfile(req, res) {
                             users.multi_login = userAccount.multi_login;
                             users.allowed_file_categories = userAccount.allowed_file_categories;
                             users.user_meta = userAccount.user_meta;
+                            users.client_scopes = userAccount.client_scopes;
 
                             jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, users);
 
@@ -2545,7 +2546,7 @@ function AssignConsoleToUser(req, res) {
                                     jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
                                     res.end(jsonString);
                                 } else {
-                                    if (adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin") {
+                                    if (adminUser && adminUser.user_meta.role != undefined && (adminUser.user_meta.role == "admin" || adminUser.user_meta.role == "supervisor")) {
                                         if (appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1) {
                                             var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", assignUser.user_meta.role);
                                             //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
@@ -2877,7 +2878,7 @@ function AddUserAppScopes(req, res) {
                                     jsonString = messageFormatter.FormatMessage(err, "Validate Assigning User Failed", false, undefined);
                                     res.end(jsonString);
                                 } else {
-                                    if (adminUser && adminUser.user_meta.role != undefined && adminUser.user_meta.role == "admin") {
+                                    if (adminUser && adminUser.user_meta.role != undefined && (adminUser.user_meta.role == "admin" || adminUser.user_meta.role == "supervisor")) {
                                         if (appConsole.consoleUserRoles.indexOf(assignUser.user_meta.role) > -1) {
                                             var consoleAccessLimitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", assignUser.user_meta.role);
                                             //if(consoleAccessLimitObj && (consoleAccessLimitObj.currentAccess.indexOf(assignUser.username) > -1 || consoleAccessLimitObj.accessLimit > consoleAccessLimitObj.currentAccess.length)){
