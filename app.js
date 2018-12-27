@@ -465,6 +465,8 @@ app.get('/DVP/API/:version/BusinessUnits', jwt({secret: secret.Secret}),authoriz
 app.get('/DVP/API/:version/BusinessUnitsWithGroups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnitsWithGroups);
 app.get('/DVP/API/:version/BusinessUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnit);
 
+
+
 app.get('/DVP/API/:version/Supervisor/:sid/Groups', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), userGroupService.GetSupervisorUserGroups);
 app.put('/DVP/API/:version/BusinessUnit/:name/Head/:hid', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadToBusinessUnits);
 app.delete('/DVP/API/:version/BusinessUnit/:name/Head/:hid', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.RemoveHeadToBusinessUnits);
@@ -473,6 +475,7 @@ app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.S
 app.get('/DVP/API/:version/BusinessUnit/:name/Users', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUsersOfBusinessUnits);
 app.get('/DVP/API/:version/MyBusinessUnit', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetMyBusinessUnit);
 
+app.get('/DVP/API/:version/BusinessUnit/:name/UserCount', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUserCountOfBusinessUnit);
 
 app.get('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetAccessibleFieldConfig);
 app.put('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateAccessibleFieldConfig);

@@ -750,51 +750,80 @@ function GetUsersOfBusinessUnits(req, res){
         var company = parseInt(req.user.company);
         var tenant = parseInt(req.user.tenant);
         var jsonString;
+        var queryString;
+        var page = 0;
+        var size = 0;
+        var skip = 0;
+        var isPaging = false;
+
+        var returnFunc = function (errUsers,resUsers) {
+            if(errUsers)
+            {
+                jsonString = messageFormatter.FormatMessage(errUsers, "User searching Failed", false, undefined);
+                logger.error("DVP-UserService.GetUsersOfBusinessUnits :  User searching Failed ");
+                res.end(jsonString);
+            }
+            else
+            {
+
+                var users = resUsers.reduce(function(arr,item,index,items){
+
+                    if(item && item.userref) {
+                        item.userref.resourceid = item.resource_id;
+                        arr.push(item.userref);
+                    }else{
+
+                        logger.error("UserAccount found without account reference");
+                    }
+                    return arr;
+
+                },[]);
+                // var users = resUsers.map(function(item){
+                //
+                //     item.userref.resourceid = item.resource_id;
+                //     return item.userref;
+                // });
+                jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, users);
+                logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  User searching Succeeded ");
+                res.end(jsonString);
+            }
+        }
+        var execFunc = function (isPaging,groupIds) {
+
+
+            queryString = {company: company, tenant: tenant, active:true};
+            if(groupIds && groupIds.length>0)
+            {
+                queryString.group={$in:groupIds};
+            }
+
+            if(isPaging)
+            {
+                UserAccount.find(queryString).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).populate('userref', '-password').lean().skip(skip)
+                    .limit(size).exec(returnFunc);
+            }
+            else
+            {
+                UserAccount.find(queryString).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).populate('userref', '-password').lean().exec(returnFunc);
+            }
+
+        };
+
+        if (req.query.Page && req.query.Size) {
+            page = parseInt(req.query.Page),
+                size = parseInt(req.query.Size),
+                skip = page > 0 ? ((page - 1) * size) : 0;
+            isPaging = true;
+        }
+
 
         if(req.params.name)
         {
 
             if(req.params.name.toLowerCase() =="all")
             {
-                UserAccount.find(
-                    {
-                        company: company,
-                        tenant: tenant,
-                        active:true
-                    }
-                ).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).populate('userref', '-password').exec(function (errUsers,resUsers) {
+                execFunc(isPaging,[]);
 
-                    if(errUsers)
-                    {
-                        jsonString = messageFormatter.FormatMessage(errUsers, "User searching Failed", false, undefined);
-                        logger.error("DVP-UserService.GetUsersOfBusinessUnits :  User searching Failed ");
-                        res.end(jsonString);
-                    }
-                    else
-                    {
-
-                        var users = resUsers.reduce(function(arr,item,index,items){
-
-                            if(item && item.userref) {
-                                item.userref.resourceid = item.resource_id;
-                                arr.push(item.userref);
-                            }else{
-
-                                logger.error("UserAccount found without account reference");
-                            }
-                            return arr;
-
-                        },[]);
-                        // var users = resUsers.map(function(item){
-                        //
-                        //     item.userref.resourceid = item.resource_id;
-                        //     return item.userref;
-                        // });
-                        jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, users);
-                        logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  User searching Succeeded ");
-                        res.end(jsonString);
-                    }
-                });
             }
             else
             {
@@ -818,35 +847,124 @@ function GetUsersOfBusinessUnits(req, res){
 
                             });
 
-                            UserAccount.find({
+                            execFunc(isPaging,grouiIds);
+
+                        }
+                        else {
+                            jsonString = messageFormatter.FormatMessage(undefined, "Business Units searching Failed", false, undefined);
+                            logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Business Units searching Failed ");
+                            res.end(jsonString);
+                        }
+                    }
+
+
+                });
+            }
+
+
+        }
+        else
+        {
+            logger.error("DVP-UserService.GetUsersOfBusinessUnits :  No Business Unit name received ");
+            jsonString = messageFormatter.FormatMessage(new Error(" No Business Unit name received "), " No Business Unit name received ", false, undefined);
+            res.end(jsonString);
+        }
+
+
+    } catch (e) {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in searching Business Units", false, undefined);
+        res.end(jsonString);
+    }
+
+
+};
+
+
+function GetUserCountOfBusinessUnit (req,res)
+{
+    logger.debug("DVP-UserService.GetUserCountOfBusinessUnit Internal method ");
+
+    try {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+        if(req.params.name)
+        {
+
+            if(req.params.name.toLowerCase() =="all")
+            {
+                UserAccount.count(
+                    {
+                        company: company,
+                        tenant: tenant,
+                        active:true
+                    }
+                ).exec(function (errUsers,cntUsers) {
+
+                    if(errUsers)
+                    {
+                        jsonString = messageFormatter.FormatMessage(errUsers, "User count searching Failed", false, undefined);
+                        logger.error("DVP-UserService.GetUserCountOfBusinessUnit :  User count searching Failed ");
+                        res.end(jsonString);
+                    }
+                    else
+                    {
+
+                        jsonString = messageFormatter.FormatMessage(undefined, "User count searching Succeeded", true, cntUsers);
+                        logger.debug("DVP-UserService.GetUserCountOfBusinessUnit :  User count searching Succeeded ");
+                        res.end(jsonString);
+                    }
+                });
+            }
+            else
+            {
+                UserGroup.find({
+                    company: company,
+                    tenant: tenant,
+                    businessUnit:req.params.name}).exec(function (errGroups, resGroups) {
+
+                    if (errGroups) {
+                        logger.error("DVP-UserService.GetUserCountOfBusinessUnit :  Error in searching user groups ",errGroups);
+                        jsonString = messageFormatter.FormatMessage(errGroups, "Error in searching user groups", false, undefined);
+                        res.end(jsonString);
+                    }
+                    else {
+                        if (resGroups) {
+
+                            var grouiIds=[];
+
+                            resGroups.forEach(function (item) {
+
+                                grouiIds.push(item._id);
+
+                            });
+
+                            UserAccount.count({
                                 company: company,
                                 tenant: tenant,
                                 active:true,
-                                group:{$in:grouiIds}}).select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0}).populate('userref', '-password').exec(function (errUsers,resUsers) {
+                                group:{$in:grouiIds}}).exec(function (errUsers,cntUsers) {
 
                                 if(errUsers)
                                 {
-                                    jsonString = messageFormatter.FormatMessage(errUsers, "User searching Failed", false, undefined);
-                                    logger.error("DVP-UserService.GetUsersOfBusinessUnits :  User searching Failed ");
+                                    jsonString = messageFormatter.FormatMessage(errUsers, "User count searching Failed", false, undefined);
+                                    logger.error("DVP-UserService.GetUserCountOfBusinessUnit :  User count searching Failed ");
                                     res.end(jsonString);
                                 }
                                 else
                                 {
-                                    var users = resUsers.map(function(item){
 
-                                        item.userref.resourceid = item.resource_id;
-                                        return item.userref;
-                                    });
-                                    jsonString = messageFormatter.FormatMessage(undefined, "User searching Succeeded", true, users);
-                                    logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  User searching Succeeded ");
+                                    jsonString = messageFormatter.FormatMessage(undefined, "User count searching Succeeded", true, cntUsers);
+                                    logger.debug("DVP-UserService.GetUserCountOfBusinessUnit :  User count searching Succeeded ");
                                     res.end(jsonString);
                                 }
                             });
 
                         }
                         else {
-                            jsonString = messageFormatter.FormatMessage(undefined, "Business Units searching Failed", false, undefined);
-                            logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Business Units searching Failed ");
+                            jsonString = messageFormatter.FormatMessage(undefined, "No user group found", false, undefined);
+                            logger.error("DVP-UserService.GetUserCountOfBusinessUnit :  No user group found ");
                             res.end(jsonString);
                         }
                     }
@@ -885,7 +1003,7 @@ function GetUsersOfBusinessUnits(req, res){
         }
         else
         {
-            logger.error("DVP-UserService.GetUsersOfBusinessUnits :  No Business Unit name received ");
+            logger.error("DVP-UserService.GetUserCountOfBusinessUnit :  No Business Unit name received ");
             jsonString = messageFormatter.FormatMessage(new Error(" No Business Unit name received "), " No Business Unit name received ", false, undefined);
             res.end(jsonString);
         }
@@ -895,9 +1013,7 @@ function GetUsersOfBusinessUnits(req, res){
         jsonString = messageFormatter.FormatMessage(e, "Exception in searching Business Units", false, undefined);
         res.end(jsonString);
     }
-
-
-};
+}
 
 module.exports.AddBusinessUnit=AddBusinessUnit;
 module.exports.GetBusinessUnits=GetBusinessUnits;
@@ -912,3 +1028,4 @@ module.exports.GetMyBusinessUnit=GetMyBusinessUnit;
 module.exports.UpdateBusinessUnitUserGroups=UpdateBusinessUnitUserGroups;
 module.exports.AddDefaultBusinessUnit = AddDefaultBusinessUnit;
 module.exports.RemoveHeadToBusinessUnits = RemoveHeadToBusinessUnits;
+module.exports.GetUserCountOfBusinessUnit = GetUserCountOfBusinessUnit;
