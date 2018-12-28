@@ -503,6 +503,9 @@ app.post('/DVP/API/:version/UserAccount/DataMigrate/Domain',jwt({secret: secret.
 
 app.put('/DVP/API/:version/ReportUser/:username/Console/:consoleName/Navigation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateReportUser);
 
+
+app.get('/DVP/API/:version/BusinessUnit/:name/UserCount', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUserCountOfBusinessUnit);
+
 app.listen(port, function () {
 
     logger.info("DVP-UserService.main Server listening at %d", port);
