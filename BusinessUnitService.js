@@ -929,6 +929,142 @@ module.exports.GetBusinessUnitAndGroupsByResourceId = function (req, res) {
     }
 };
 
+function GetUserCountOfBusinessUnit (req,res)
+{
+    logger.debug("DVP-UserService.GetUserCountOfBusinessUnit Internal method ");
+
+    try {
+        var company = parseInt(req.user.company);
+        var tenant = parseInt(req.user.tenant);
+        var jsonString;
+
+        if(req.params.name)
+        {
+
+            if(req.params.name.toLowerCase() =="all")
+            {
+                UserAccount.count(
+                    {
+                        company: company,
+                        tenant: tenant,
+                        active:true
+                    }
+                ).exec(function (errUsers,cntUsers) {
+
+                    if(errUsers)
+                    {
+                        jsonString = messageFormatter.FormatMessage(errUsers, "User count searching Failed", false, undefined);
+                        logger.error("DVP-UserService.GetUserCountOfBusinessUnit :  User count searching Failed ");
+                        res.end(jsonString);
+                    }
+                    else
+                    {
+
+                        jsonString = messageFormatter.FormatMessage(undefined, "User count searching Succeeded", true, cntUsers);
+                        logger.debug("DVP-UserService.GetUserCountOfBusinessUnit :  User count searching Succeeded ");
+                        res.end(jsonString);
+                    }
+                });
+            }
+            else
+            {
+                UserGroup.find({
+                    company: company,
+                    tenant: tenant,
+                    businessUnit:req.params.name}).exec(function (errGroups, resGroups) {
+
+                    if (errGroups) {
+                        logger.error("DVP-UserService.GetUserCountOfBusinessUnit :  Error in searching user groups ",errGroups);
+                        jsonString = messageFormatter.FormatMessage(errGroups, "Error in searching user groups", false, undefined);
+                        res.end(jsonString);
+                    }
+                    else {
+                        if (resGroups) {
+
+                            var grouiIds=[];
+
+                            resGroups.forEach(function (item) {
+
+                                grouiIds.push(item._id);
+
+                            });
+
+                            UserAccount.count({
+                                company: company,
+                                tenant: tenant,
+                                active:true,
+                                group:{$in:grouiIds}}).exec(function (errUsers,cntUsers) {
+
+                                if(errUsers)
+                                {
+                                    jsonString = messageFormatter.FormatMessage(errUsers, "User count searching Failed", false, undefined);
+                                    logger.error("DVP-UserService.GetUserCountOfBusinessUnit :  User count searching Failed ");
+                                    res.end(jsonString);
+                                }
+                                else
+                                {
+
+                                    jsonString = messageFormatter.FormatMessage(undefined, "User count searching Succeeded", true, cntUsers);
+                                    logger.debug("DVP-UserService.GetUserCountOfBusinessUnit :  User count searching Succeeded ");
+                                    res.end(jsonString);
+                                }
+                            });
+
+                        }
+                        else {
+                            jsonString = messageFormatter.FormatMessage(undefined, "No user group found", false, undefined);
+                            logger.error("DVP-UserService.GetUserCountOfBusinessUnit :  No user group found ");
+                            res.end(jsonString);
+                        }
+                    }
+
+
+                });
+            }
+
+
+            /*User.find({
+             company: company,
+             tenant: tenant
+             }).populate({
+             path:'group',
+             match:{businessUnit:{$eq:req.params.name}}
+             }).exec(function (errUsers, resUsers) {
+
+             if (errUsers) {
+             logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Error in searching supervisors ",errUsers);
+             jsonString = messageFormatter.FormatMessage(errUsers, "Error in searching Business Units", false, undefined);
+             }
+             else {
+             if (resUsers) {
+
+             jsonString = messageFormatter.FormatMessage(undefined, "Business Units found", true, unique(resUsers));
+             logger.debug("DVP-UserService.GetUsersOfBusinessUnits :  Business Units found ");
+             }
+             else {
+             jsonString = messageFormatter.FormatMessage(undefined, "Business Units Failed", false, undefined);
+             logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Business Units Failed ");
+             }
+             }
+
+             res.end(jsonString);
+             });*/
+        }
+        else
+        {
+            logger.error("DVP-UserService.GetUserCountOfBusinessUnit :  No Business Unit name received ");
+            jsonString = messageFormatter.FormatMessage(new Error(" No Business Unit name received "), " No Business Unit name received ", false, undefined);
+            res.end(jsonString);
+        }
+
+
+    } catch (e) {
+        jsonString = messageFormatter.FormatMessage(e, "Exception in searching Business Units", false, undefined);
+        res.end(jsonString);
+    }
+}
+
+
 module.exports.AddBusinessUnit = AddBusinessUnit;
 module.exports.GetBusinessUnits = GetBusinessUnits;
 module.exports.GetBusinessUnit = GetBusinessUnit;
@@ -942,3 +1078,4 @@ module.exports.GetMyBusinessUnit = GetMyBusinessUnit;
 module.exports.UpdateBusinessUnitUserGroups = UpdateBusinessUnitUserGroups;
 module.exports.AddDefaultBusinessUnit = AddDefaultBusinessUnit;
 module.exports.RemoveHeadToBusinessUnits = RemoveHeadToBusinessUnits;
+module.exports.GetUserCountOfBusinessUnit = GetUserCountOfBusinessUnit;
