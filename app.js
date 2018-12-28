@@ -506,7 +506,7 @@ app.put('/DVP/API/:version/ReportUser/:username/Console/:consoleName/Navigation'
 
 app.get('/DVP/API/:version/BusinessUnit/:name/UserCount', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUserCountOfBusinessUnit);
 app.post('/DVP/API/:version/UsersByRoles/Count', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUserCountByRoles);
-
+app.get('/DVP/API/:version/UsersByRole/:role/Count', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsersCountByRole);
 app.listen(port, function () {
 
     logger.info("DVP-UserService.main Server listening at %d", port);

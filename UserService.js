@@ -368,6 +368,47 @@ function GetUsersByRole(req, res) {
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
+    var page = 0;
+    var size = 0;
+    var skip = 0;
+    var isPaging = false;
+
+    var execFunc = function (err, userAccounts) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+
+        } else {
+
+            var users = userAccounts.map(function (userAccount) {
+                var user = userAccount.userref.toObject();
+
+                user.group = userAccount.group;
+                user.Active = userAccount.active;
+                user.joined = userAccount.joined;
+                user.resourceid = userAccount.resource_id;
+                user.veeryaccount = userAccount.veeryaccount;
+                user.multi_login = userAccount.multi_login;
+                user.allowoutbound = userAccount.allowoutbound;
+                user.allowed_file_categories = userAccount.allowed_file_categories;
+
+                return user;
+
+            });
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+
+        }
+
+        res.end(jsonString);
+    }
+
+    if (req.query.Page && req.query.Size) {
+        page = parseInt(req.query.Page),
+            size = parseInt(req.query.Size),
+            skip = page > 0 ? ((page - 1) * size) : 0;
+        isPaging = true;
+    }
 
     var query = { _id: { $in: req.query.id }, company: company, tenant: tenant, active: true };
 
@@ -375,40 +416,25 @@ function GetUsersByRole(req, res) {
         query = { _id: req.query.id, company: company, tenant: tenant, active: true };
 
 
-    UserAccount.find({
-        company: company,
-        tenant: tenant,
-        'user_meta.role': req.params.role
-    }).populate('userref', '-password')
-        .exec(function (err, userAccounts) {
-            if (err) {
+    if(isPaging)
+    {
+        UserAccount.find({
+            company: company,
+            tenant: tenant,
+            'user_meta.role': req.params.role
+        }).populate('userref', '-password').skip(skip)
+            .limit(size).exec(execFunc);
+    }else
+    {
+        UserAccount.find({
+            company: company,
+            tenant: tenant,
+            'user_meta.role': req.params.role
+        }).populate('userref', '-password')
+            .exec(execFunc);
+    }
 
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
 
-            } else {
-
-                var users = userAccounts.map(function (userAccount) {
-                    var user = userAccount.userref.toObject();
-
-                    user.group = userAccount.group;
-                    user.Active = userAccount.active;
-                    user.joined = userAccount.joined;
-                    user.resourceid = userAccount.resource_id;
-                    user.veeryaccount = userAccount.veeryaccount;
-                    user.multi_login = userAccount.multi_login;
-                    user.allowoutbound = userAccount.allowoutbound;
-                    user.allowed_file_categories = userAccount.allowed_file_categories;
-
-                    return user;
-
-                });
-
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
-
-            }
-
-            res.end(jsonString);
-        });
 
 }
 
@@ -419,7 +445,51 @@ function GetUsersByRoles(req, res) {
 
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
+
+
     var jsonString;
+    var page = 0;
+    var size = 0;
+    var skip = 0;
+    var isPaging = false;
+
+    var execFunc = function (err, userAccounts) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+
+        } else {
+
+            var users = userAccounts.map(function (userAccount) {
+                var user = userAccount.userref.toObject();
+
+                user.group = userAccount.group;
+                user.Active = userAccount.active;
+                user.joined = userAccount.joined;
+                user.resourceid = userAccount.resource_id;
+                user.veeryaccount = userAccount.veeryaccount;
+                user.multi_login = userAccount.multi_login;
+                user.allowoutbound = userAccount.allowoutbound;
+                user.allowed_file_categories = userAccount.allowed_file_categories;
+
+                return user;
+
+            });
+
+            jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
+
+        }
+
+        res.end(jsonString);
+    }
+
+    if (req.query.Page && req.query.Size) {
+        page = parseInt(req.query.Page),
+            size = parseInt(req.query.Size),
+            skip = page > 0 ? ((page - 1) * size) : 0;
+        isPaging = true;
+    }
+
 
 
     var qObj = {
@@ -434,36 +504,18 @@ function GetUsersByRoles(req, res) {
     });
 
 
-    UserAccount.find(qObj).select('-user_scopes -client_scopes').populate('userref', '-password -user_scopes -client_scopes')
-        .exec(function (err, userAccounts) {
-            if (err) {
+    if(isPaging)
+    {
+        UserAccount.find(qObj).select('-user_scopes -client_scopes').populate('userref', '-password -user_scopes -client_scopes')
+            .skip(skip)
+            .limit(size).exec(execFunc);
+    }
+    else
+    {
+        UserAccount.find(qObj).select('-user_scopes -client_scopes').populate('userref', '-password -user_scopes -client_scopes')
+            .exec(execFunc);
+    }
 
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
-
-            } else {
-
-                var users = userAccounts.map(function (userAccount) {
-                    var user = userAccount.userref.toObject();
-
-                    user.group = userAccount.group;
-                    user.Active = userAccount.active;
-                    user.joined = userAccount.joined;
-                    user.resourceid = userAccount.resource_id;
-                    user.veeryaccount = userAccount.veeryaccount;
-                    user.multi_login = userAccount.multi_login;
-                    user.allowoutbound = userAccount.allowoutbound;
-                    user.allowed_file_categories = userAccount.allowed_file_categories;
-
-                    return user;
-
-                });
-
-                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, users);
-
-            }
-
-            res.end(jsonString);
-        });
 
 }
 
@@ -4454,6 +4506,85 @@ function UpdateUsersVeeryAccountDomain(req, res) {
 }
 
 
+function GetUsersCountByRole(req, res) {
+
+
+    logger.debug("DVP-UserService.GetUsersByRole Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    var query = { _id: { $in: req.query.id }, company: company, tenant: tenant, active: true };
+
+    if (!util.isArray(req.query.id))
+        query = { _id: req.query.id, company: company, tenant: tenant, active: true };
+
+
+    UserAccount.count({
+        company: company,
+        tenant: tenant,
+        'user_meta.role': req.params.role
+    }).populate('userref', '-password')
+        .exec(function (err, userCount) {
+            if (err) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+
+            } else {
+
+
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, userCount);
+
+            }
+
+            res.end(jsonString);
+        });
+
+}
+
+function GetUserCountByRoles(req, res) {
+
+
+    logger.debug("DVP-UserService.GetUserCountByRoles Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+
+    var qObj = {
+        company: company,
+        tenant: tenant,
+        $or: [],
+        active: true
+    };
+
+    req.body.roles.forEach(function (item) {
+        qObj.$or.push({ 'user_meta.role': item });
+    });
+
+
+    UserAccount.count(qObj).select('-user_scopes -client_scopes').populate('userref', '-password -user_scopes -client_scopes')
+        .exec(function (err, userCount) {
+            if (err) {
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Failed", false, undefined);
+
+            } else {
+
+
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Users Successful", true, userCount);
+
+            }
+
+            res.end(jsonString);
+        });
+
+}
+
 module.exports.GetUser = GetUser;
 module.exports.GetUsers = GetUsers;
 module.exports.GetUsersByRole = GetUsersByRole;
@@ -4543,6 +4674,8 @@ module.exports.UpdateUsersVeeryAccountDomain = UpdateUsersVeeryAccountDomain;
 module.exports.CreateReportUser = CreateReportUser;
 
 module.exports.GetUserCount = GetUserCount;
+module.exports.GetUsersCountByRole = GetUsersCountByRole;
+module.exports.GetUserCountByRoles = GetUserCountByRoles;
 
 module.exports.RedisCon = redisClient;
 module.exports.DbConn = DbConn.SequelizeConn;
