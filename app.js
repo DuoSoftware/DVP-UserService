@@ -472,6 +472,7 @@ app.put('/DVP/API/:version/BusinessUnit/:name/Heads', jwt({secret: secret.Secret
 app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetSupervisorBusinessUnits);
 app.get('/DVP/API/:version/BusinessUnit/:name/Users', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUsersOfBusinessUnits);
 app.get('/DVP/API/:version/MyBusinessUnit', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetMyBusinessUnit);
+app.get('/DVP/API/:version/GetBusinessUnitAndGroups/:ResourceId', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetBusinessUnitAndGroupsByResourceId);
 
 
 app.get('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetAccessibleFieldConfig);
@@ -502,6 +503,10 @@ app.post('/DVP/API/:version/UserAccount/DataMigrate/Domain',jwt({secret: secret.
 
 app.put('/DVP/API/:version/ReportUser/:username/Console/:consoleName/Navigation', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), userService.CreateReportUser);
 
+
+app.get('/DVP/API/:version/BusinessUnit/:name/UserCount', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUserCountOfBusinessUnit);
+app.post('/DVP/API/:version/UsersByRoles/Count', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUserCountByRoles);
+app.get('/DVP/API/:version/UsersByRole/:role/Count', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.GetUsersCountByRole);
 app.listen(port, function () {
 
     logger.info("DVP-UserService.main Server listening at %d", port);
