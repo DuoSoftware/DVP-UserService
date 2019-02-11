@@ -133,7 +133,9 @@ module.exports = {
         "clusterconfigserviceVersion": "SYS_CLUSTERCONFIG_VERSION",
         "billingserviceHost": "SYS_BILLINGSERVICE_HOST",
         "billingservicePort": "SYS_BILLINGSERVICE_PORT",
-        "billingserviceVersion": "SYS_BILLINGSERVICE_VERSION"
+        "billingserviceVersion": "SYS_BILLINGSERVICE_VERSION",
+        "authgeneratorserviceHost": "SYS_AUTHGENERATOR_HOST",
+        "authgeneratorserviceVersion": "SYS_AUTHGENERATOR_VERSION"
     },
 
     "Tenant": {
@@ -146,7 +148,16 @@ module.exports = {
 
     "ActiveDirectory": {
         "groupName": "AD_GROUPNAME"
-    }
+    },
+
+    "AWS": {
+        "Auth": {
+          "region": 'AWS_COGNITO_REGION',
+          "userPoolId": 'AWS_COGNITO_USERPOOL_ID',
+          "userPoolWebClientId": 'AWS_COGNITO_USERPOOL_CLIENT_ID',
+          "authenticationFlowType": 'AWS_COGNITO_USERPOOL_AUTHFLOW_TYPE'
+        }
+      }
 };
 
 //NODE_CONFIG_DIR
