@@ -36,6 +36,7 @@ var util = require('util');
 var secret = require('dvp-common/Authentication/Secret.js');
 var authorization = require('dvp-common/Authentication/Authorization.js');
 var Login = require("./Login");
+var CognitoLogin = require("./aws/cognito");
 var ActiveDirectory = require('./ActiveDirectoryService');
 var UserInvitationService = require("./UserInvitationService")
 
@@ -190,6 +191,10 @@ app.post('/auth/attachments', Login.Attachments);
 //bot_framework
 app.post('/auth/fedarate/login', Login.FedaratedLogin);
 
+app.post('/auth/aws/signup', CognitoLogin.signUp);
+app.post('/auth/aws/signin', CognitoLogin.signIn);
+app.post('/auth/aws/password/forgot', CognitoLogin.forgotPassword);
+app.post('/auth/aws/password/confirm', CognitoLogin.confirmPassword);
 //end: bot_framework
 
 app.post('/auth/google', Login.Google);
