@@ -158,7 +158,9 @@ module.exports = {
     "billingserviceVersion": "1.0.0.0",
     "notificationServiceHost": "notificationservice.app1.veery.cloud",
     "notificationServicePort": "8089",
-    "notificationServiceVersion": "1.0.0.0"
+    "notificationServiceVersion": "1.0.0.0",
+    "authgeneratorserviceHost": "smoothauthgeneratordev.plus.smoothflow.io",
+    "authgeneratorserviceVersion": "1.0.0.0"
   },
 
   "Tenant": {
@@ -171,8 +173,15 @@ module.exports = {
 
   "ActiveDirectory": {
     "groupName": "FaceTone"
+  },
+
+  "AWS": {
+    "Auth": {
+      "region": 'us-east-1',
+      "userPoolId": 'us-east-1_J98Pa2dIT', //'us-east-1_J98Pa2dIT',
+      "userPoolWebClientId": '2podcdk6k40vcvgo7ks001ucv0',
+      "authenticationFlowType": 'USER_PASSWORD_AUTH'
+    }
   }
-
-
 
 };
