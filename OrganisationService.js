@@ -1533,7 +1533,7 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
                                         ],
                                         created_at: Date.now(),
                                         updated_at: Date.now(),
-                                        multi_login: false
+                                        multi_login: config.auth.multi_login || false
                                     });
 
                                     userAccount.save(function (err, account) {
