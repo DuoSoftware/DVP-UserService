@@ -461,6 +461,8 @@ function GetUsersByRoles(req, res) {
         } else {
 
             var users = userAccounts.map(function (userAccount) {
+                if(userAccount && userAccount.userref)
+                {
                 var user = userAccount.userref.toObject();
 
                 user.group = userAccount.group;
@@ -473,6 +475,7 @@ function GetUsersByRoles(req, res) {
                 user.allowed_file_categories = userAccount.allowed_file_categories;
 
                 return user;
+                }
 
             });
 
