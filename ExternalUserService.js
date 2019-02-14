@@ -176,7 +176,7 @@ function CreateExternalUser(req, res) {
     if (req.body && req.body.firstname && req.body.lastname && req.body.phone ) {
         var extUser = ExternalUser({
             title: req.body.title,
-            name: req.body.name,
+            name: req.body.firstname+" "+req.body.lastname,
             avatar: req.body.avatar,
             birthday: req.body.birthday,
             gender: req.body.gender,
