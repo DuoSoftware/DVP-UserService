@@ -49,7 +49,7 @@ function GetExternalUsersByHint(req, res) {
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    ExternalUser.find({company: company, tenant: tenant,name: new RegExp('^'+req.params.hint+'$', "i")}, function (err, users) {
+    ExternalUser.find({company: company, tenant: tenant,name: { $regex: '.*' + req.params.hint + '.*' }}, function (err, users) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Get External Users By Hint Failed", false, undefined);
