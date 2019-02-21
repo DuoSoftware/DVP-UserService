@@ -178,9 +178,13 @@ module.exports = {
   "AWS": {
     "Auth": {
       "region": 'us-east-1',
-      "userPoolId": 'us-east-1_J98Pa2dIT', //'us-east-1_J98Pa2dIT',
-      "userPoolWebClientId": '2podcdk6k40vcvgo7ks001ucv0',
+      "userPoolId": '',
+      "userPoolWebClientId": '',
       "authenticationFlowType": 'USER_PASSWORD_AUTH'
+    },
+    "Programmatic": {
+      "accessKeyId": "",
+      "secretAccessKey": ""
     }
   }
 

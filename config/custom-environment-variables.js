@@ -156,7 +156,11 @@ module.exports = {
           "userPoolId": 'AWS_COGNITO_USERPOOL_ID',
           "userPoolWebClientId": 'AWS_COGNITO_USERPOOL_CLIENT_ID',
           "authenticationFlowType": 'AWS_COGNITO_USERPOOL_AUTHFLOW_TYPE'
-        }
+        },
+        "Programmatic": {
+            "accessKeyId": "AWS_PROGRAMMATIC_ACCESSKEY",
+            "secretAccessKey": "AWS_PROGRAMMATIC_SECRETACCESSKEY"
+          }
       }
 };
 

@@ -21,7 +21,10 @@ const
   CONFIRMPASSWORD_PAYLOAD_RULES = {
     "userName": {"type": "string", required: true},
     "verificationCode": {"type": "string", required: true},
-    "newPassword": {"type": "string", required: true}};
+    "newPassword": {"type": "string", required: true}},
+  INVITEUSER_PAYLOAD_RULES = {
+    "userName": {"type": "string", required: true}
+  };
 
 const signUp = (req, res, next) => {
   let rpReport = validateRequestPayload(req.body, SIGNUP_PAYLOAD_RULES);
@@ -129,6 +132,29 @@ const confirmPassword = (req, res, next) => {
     .catch((err) => {
       res.status(401).send({message:err.message});
     });
+}
+
+const inviteUser = (req, res, next) => {
+  console.log('aws invite user internal method.');
+
+  let rpReport = validateRequestPayload(req.body, INVITEUSER_PAYLOAD_RULES);
+
+  if (rpReport.status === 'failed') {
+    console.log('Invalid request payload', rpReport.violatedRules);
+    return res.status(400).send({message: "Invalid request payload.", errors: rpReport.violatedRules});
+  }
+
+  let payload = req.body;
+  payload['companyName'] = req.user.companyName;
+
+  AWSAuth.inviteUser(payload)
+  .then((result) => {
+    res.send({message: `A invitaion has been sent to email address: ${payload.userName}`})
+  })
+  .catch((err) => {
+    return res.status(404).send({message: `${err.message}`});
+  })
+
 }
 
 const validateRequestPayload = (payload, payloadRules) => {
@@ -294,5 +320,6 @@ module.exports = {
   signIn,
   changePassword,
   forgotPassword,
+  inviteUser,
   confirmPassword
 }

@@ -1,11 +1,15 @@
 global.fetch = require('node-fetch');
 
 const config = require('config'),
+  AWS = require('aws-sdk'),
   { CognitoUserPool, 
     CognitoUser, 
     CognitoUserAttribute, 
     AuthenticationDetails 
-  } = require('amazon-cognito-identity-js');
+  } = require('amazon-cognito-identity-js'),
+  crypto = require("crypto");
+
+AWS.config.update({region:'us-east-1'});
 
 const userPool = new CognitoUserPool({
   UserPoolId: config.AWS.Auth.userPoolId,
@@ -106,6 +110,52 @@ const confirmPassword = (username, verificationCode, newPassword) => {
 
 }
 
+const inviteUser = (user) => {
+
+  AWS.config.update({
+    accessKeyId: config.AWS.Programmatic.accessKeyId,
+    secretAccessKey: config.AWS.Programmatic.secretAccessKey
+  });
+
+  let params = {
+    UserPoolId: userPool.getUserPoolId(), /* required */
+    Username: user.userName, /* required */
+    DesiredDeliveryMediums: [
+        'EMAIL'
+    ],
+    ForceAliasCreation: false,
+    // MessageAction: 'SUPPRESS',
+    TemporaryPassword: crypto.randomBytes(10).toString('hex'),
+    UserAttributes: [{
+        Name: 'email', /* required */
+        Value: user.userName
+      },{
+        Name:'email_verified',
+        Value: "True"
+      },{
+        Name: 'custom:company_name',
+        Value: user.companyName
+      }
+        /* more items */
+    ]
+  };
+
+  return new Promise((resolve, reject) => {
+    let cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
+    
+    cognitoidentityserviceprovider.adminCreateUser(params, function(err, data) {
+      if (err) {
+        console.log('Error getting while inviting user', err);
+        reject(err);
+      }else {
+        console.log(`User invitation sent to ${params.Username}.`);
+        resolve(data);
+      }
+    });
+  })
+
+}
+
 const removeUser = (username) => {
   let cognitoUser = new CognitoUser({ Username : username, Pool : userPool });
 
@@ -135,6 +185,7 @@ module.exports = {
   changePassword,
   forgotPassword,
   confirmPassword,
+  inviteUser,
   removeUser,
   getAWSAuthInfo
 }

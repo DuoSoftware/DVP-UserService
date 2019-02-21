@@ -195,6 +195,7 @@ app.post('/auth/aws/signup', CognitoLogin.signUp);
 app.post('/auth/aws/signin', CognitoLogin.signIn);
 app.post('/auth/aws/password/forgot', CognitoLogin.forgotPassword);
 app.post('/auth/aws/password/confirm', CognitoLogin.confirmPassword);
+app.post('/auth/aws/user/invite', jwt({secret: secret.Secret}), authorization({resource:"user", action:"read"}), CognitoLogin.inviteUser);
 //end: bot_framework
 
 app.post('/auth/google', Login.Google);
@@ -482,7 +483,7 @@ app.get('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),aut
 app.put('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.UpdateAccessibleFieldConfig);
 app.post('/DVP/API/:version/ExternalUserConfig', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.AddAccessibleFieldConfig);
 app.get('/DVP/API/:version/ExternalUserConfig/DefaultKeys', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetDefaultAccessibleFieldConfig);
-app.get('/DVP/API/:version/ExternalUserConfig/UserFields', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetUserFields);
+app.get('/DVP/API/:version/ExternalUserConfig/UserFields', jwt({secret: secret.Secret}),authorization({resource:"externalUser", action:"write"}), externalUserService.GetUserFields);   
 
 
 
