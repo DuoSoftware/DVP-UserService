@@ -196,7 +196,7 @@ app.post('/auth/aws/signin', CognitoLogin.signIn);
 app.post('/auth/aws/password/forgot', CognitoLogin.forgotPassword);
 app.post('/auth/aws/password/confirm', CognitoLogin.confirmPassword);
 app.post('/auth/aws/user/invite', jwt({secret: secret.Secret}), authorization({resource:"user", action:"read"}), CognitoLogin.inviteUser);
-app.get('/auth/aws/users/invited/list', jwt({secret: secret.Secret}), authorization({resource:"user", action:"read"}), CognitoLogin.listUsers);
+app.get('/auth/aws/users/invited/list', jwt({secret: secret.Secret}), authorization({resource:"user", action:"read"}), CognitoLogin.listInvitedUsers);
 //end: bot_framework
 
 app.post('/auth/google', Login.Google);
