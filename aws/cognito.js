@@ -162,7 +162,7 @@ const listInvitedUsers = (req, res, next) => {
 
   AWSAuth.listInvitedUsers()
   .then((result) => {
-    res.send({data: result})
+    res.send({isSuccess: true, data: result})
   })
   .catch((err) => {
     return res.status(404).send({message: `${err.message}`});
