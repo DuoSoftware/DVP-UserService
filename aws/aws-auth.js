@@ -142,7 +142,7 @@ const inviteUser = (user) => {
 
   return new Promise((resolve, reject) => {
     let cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
-    
+  
     cognitoidentityserviceprovider.adminCreateUser(params, function(err, data) {
       if (err) {
         console.log('Error getting while inviting user', err);
@@ -154,6 +154,34 @@ const inviteUser = (user) => {
     });
   })
 
+}
+
+const listInvitedUsers = (user) => {
+
+  AWS.config.update({
+    accessKeyId: config.AWS.Programmatic.accessKeyId,
+    secretAccessKey: config.AWS.Programmatic.secretAccessKey
+  });
+
+  let params = {
+    UserPoolId: userPool.getUserPoolId(), /* required */
+    Filter: "cognito:user_status=\"FORCE_CHANGE_PASSWORD\"",
+    AttributesToGet: [ "email" ],
+  };
+
+  return new Promise((resolve, reject) => {
+    let cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider();
+  
+    cognitoidentityserviceprovider.listUsers(params, function(err, data) {
+      if (err) {
+        console.log('Error getting while listing invited users', err);
+        reject(err);
+      }else {
+        console.log(`successfully fetched invited user list`);
+        resolve(data);
+      }
+    });
+  })
 }
 
 const removeUser = (username) => {
@@ -186,6 +214,7 @@ module.exports = {
   forgotPassword,
   confirmPassword,
   inviteUser,
+  listInvitedUsers,
   removeUser,
   getAWSAuthInfo
 }

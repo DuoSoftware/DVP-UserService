@@ -157,6 +157,19 @@ const inviteUser = (req, res, next) => {
 
 }
 
+const listInvitedUsers = (req, res, next) => {
+  console.log('aws get invited users internal method.');
+
+  AWSAuth.listUsers()
+  .then((result) => {
+    res.send({data: result})
+  })
+  .catch((err) => {
+    return res.status(404).send({message: `${err.message}`});
+  });
+
+}
+
 const validateRequestPayload = (payload, payloadRules) => {
   let violatedRules = [];
 
@@ -321,5 +334,6 @@ module.exports = {
   changePassword,
   forgotPassword,
   inviteUser,
+  listInvitedUsers,
   confirmPassword
 }
