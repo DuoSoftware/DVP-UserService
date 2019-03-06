@@ -257,17 +257,23 @@ function UpdateBusinessUnitUserGroups(req, res) {
 
 };
 
-function GetBusinessUnits(req, res) {
+
+function GetBusinessUnits(req,res) {
 
     try {
         logger.debug("DVP-BusinessUnitService.GetBusinessUnit Internal method ");
         var company = parseInt(req.user.company);
         var tenant = parseInt(req.user.tenant);
         var jsonString;
+        var query = {tenant:tenant};
 
+        if(req.params.consolidated !== 'consolidated'){
+            query["company"] = company;
+        }
 
-        BusinessUnit.find({company: company, tenant: tenant}).populate('heads').exec(function (errUnits, resUnits) {
-            if (errUnits) {
+        BusinessUnit.find(query).populate('heads').exec(function (errUnits,resUnits) {
+            if(errUnits)
+            {
                 jsonString = messageFormatter.FormatMessage(errUnits, "Error in searching BusinessUnits ", false, undefined);
             }
             else {
