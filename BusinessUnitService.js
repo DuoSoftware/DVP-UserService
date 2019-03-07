@@ -690,7 +690,7 @@ function GetMyBusinessUnit(req, res) {
 
 };
 
-function GetUsersOfBusinessUnits(req, res){
+    function GetUsersOfBusinessUnits(req, res){
 
 
     logger.debug("DVP-UserService.GetMyBusinessUnit Internal method ");
@@ -739,8 +739,12 @@ function GetUsersOfBusinessUnits(req, res){
         }
         var execFunc = function (isPaging,groupIds) {
 
+            var queryString = {tenant:tenant, active:true};
 
-            queryString = {company: company, tenant: tenant, active:true};
+            if(req.params.consolidated !== 'consolidated'){
+                queryString["company"] = company;
+            }
+
             if(groupIds && groupIds.length>0)
             {
                 queryString.group={$in:groupIds};
@@ -776,10 +780,15 @@ function GetUsersOfBusinessUnits(req, res){
             }
             else
             {
-                UserGroup.find({
-                    company: company,
+                var query = {
                     tenant: tenant,
-                    businessUnit:req.params.name}).exec(function (errGroups, resGroups) {
+                    businessUnit:req.params.name};
+
+                if(req.params.consolidated !== 'consolidated'){
+                    query["company"] = company;
+                }
+
+                UserGroup.find(query).exec(function (errGroups, resGroups) {
 
                     if (errGroups) {
                         logger.error("DVP-UserService.GetUsersOfBusinessUnits :  Error in searching supervisors ",errGroups);
