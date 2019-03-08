@@ -1,5 +1,6 @@
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var PhoneConfig = require('dvp-mongomodels/model/PhoneConfig');
+var ChatConfig = require('dvp-mongomodels/model/ChatConfig');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 
@@ -14,8 +15,8 @@ module.exports.UpdateChatConfig = function (req, res) {
         $set: {
             "company": company,
             "tenant": tenant,
-            "enabled":true,
-            "welcomeMessage":req.body.WelcomeMessage,
+            "enabled":(!(req.body.welcomeMessage === null || req.body.welcomeMessage === "")),
+            "welcomeMessage":req.body.welcomeMessage,
             "created_at": Date.now(),
             "updated_at": Date.now()
         }
@@ -29,6 +30,32 @@ module.exports.UpdateChatConfig = function (req, res) {
         res.end(jsonString);
 
     });
+};
+
+module.exports.GetChatConfig = function (req, res) {
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+
+    var jsonString;
+    var qObj = {company: company, tenant: tenant, enabled: true};
+
+    ChatConfig.findOne(qObj).exec(function (err, pConfig) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "GetChatConfig Failed", false, undefined);
+        } else {
+            if (pConfig) {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "GetChatConfig Successful", true, pConfig);
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "No ChatConfig Found", false, pConfig);
+
+            }
+        }
+        res.end(jsonString);
+    });
+
 };
 
 module.exports.AddPhoneConfig = function (req, res) {
