@@ -4,6 +4,32 @@ var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJ
 
 
 
+module.exports.UpdateChatConfig = function (req, res) {
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    ChatConfig.update({company: company, tenant: tenant}, {
+        $set: {
+            "company": company,
+            "tenant": tenant,
+            "enabled":true,
+            "welcomeMessage":req.body.WelcomeMessage,
+            "created_at": Date.now(),
+            "updated_at": Date.now()
+        }
+    }, {upsert: true}, function (err, config) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "UpdateChatConfig failed", false, undefined);
+        }
+        else {
+            jsonString = messageFormatter.FormatMessage(undefined, "UpdateChatConfig successfully", true, config);
+        }
+        res.end(jsonString);
+
+    });
+};
 
 module.exports.AddPhoneConfig = function (req, res) {
 
