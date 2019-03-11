@@ -760,7 +760,7 @@ function GetUsersOfBusinessUnitsWithScopes(req, res) {
                     "password": 0,
                     "app_meta": 0,
                     "client_scopes": 0
-                }).populate('userref', '-password -app_meta -user_meta -user_scopes').populate('group', 'name').lean().skip(skip)
+                }).populate('userref', '-password -app_meta -user_meta -user_scopes').populate('group', 'name businessUnit').lean().skip(skip)
                     .limit(size).exec(returnFunc);
             }
             else {
@@ -768,7 +768,7 @@ function GetUsersOfBusinessUnitsWithScopes(req, res) {
                     "password": 0,
                     "app_meta": 0,
                     "client_scopes": 0
-                }).populate('userref', '-password -app_meta -user_meta -user_scopes').populate('group', 'name').lean().exec(returnFunc);
+                }).populate('userref', '-password -app_meta -user_meta -user_scopes').populate('group', 'name businessUnit').lean().exec(returnFunc);
             }
 
         };
