@@ -392,6 +392,7 @@ app.put('/DVP/API/:version/ExternalUser/:id/FormSubmission',jwt({secret: secret.
 
 app.post('/DVP/API/:version/UserGroup',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), userGroupService.CreateUserGroup);
 app.get('/DVP/API/:version/UserGroups',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetGroupsAndUsers);
+app.get('/DVP/API/:version/ConsolidatedUserGroups/:consolidated',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetGroupsAndUsers); //Todo: add the scope
 app.get('/DVP/API/:version/UserGroup/:id',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetUserGroup);
 app.get('/DVP/API/:version/UserGroup/:id/members',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetGroupMembers);
 app.get('/DVP/API/:version/UserGroupByName/:name',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetUserGroupByName);
