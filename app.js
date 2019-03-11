@@ -363,6 +363,8 @@ app.delete('/DVP/API/:version/Client/:id/claim/:claim', jwt({secret: secret.Secr
 //
 app.post('/DVP/API/:version/BulkExternalUser',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"write"}), externalUserService.BulkCreate);
 app.get('/DVP/API/:version/ExternalUsers',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUsers);
+app.get('/DVP/API/:version/ExternalUsersByHint/:hint',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUsersByHint);
+app.get('/DVP/API/:version/ExternalUsers/Count',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUsers);
 app.get('/DVP/API/:version/ExternalUsersByTags',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUsersByTags);
 app.get('/DVP/API/:version/ExternalUser/:id',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUser);
 app.get('/DVP/API/:version/ExternalUser/:id/attribute/:attribute',jwt({secret: secret.Secret}), authorization({resource:"externalUser", action:"read"}), externalUserService.GetExternalUserAttribute);
@@ -390,6 +392,7 @@ app.put('/DVP/API/:version/ExternalUser/:id/FormSubmission',jwt({secret: secret.
 
 app.post('/DVP/API/:version/UserGroup',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), userGroupService.CreateUserGroup);
 app.get('/DVP/API/:version/UserGroups',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetGroupsAndUsers);
+app.get('/DVP/API/:version/ConsolidatedUserGroups/:consolidated',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetGroupsAndUsers); //Todo: add the scope
 app.get('/DVP/API/:version/UserGroup/:id',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetUserGroup);
 app.get('/DVP/API/:version/UserGroup/:id/members',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetGroupMembers);
 app.get('/DVP/API/:version/UserGroupByName/:name',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetUserGroupByName);
@@ -407,6 +410,9 @@ app.post('/DVP/API/:version/Tenant',jwt({secret: secret.Secret}), authorization(
 app.get('/DVP/API/:version/Tenants',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetAllTenants);
 app.get('/DVP/API/:version/Tenant/:id',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetTenant);
 app.get('/DVP/API/:version/CompanyDomain/:companyname',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), tenantService.GetCompanyDomain);
+
+app.post('/DVP/API/:version/Chat/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"write"}), phoneConfig.UpdateChatConfig);
+app.get('/DVP/API/:version/Chat/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"write"}), phoneConfig.GetChatConfig);
 
 app.post('/DVP/API/:version/Phone/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"write"}), phoneConfig.AddPhoneConfig);
 app.get('/DVP/API/:version/Phone/Config',jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"read"}), phoneConfig.GetPhoneConfig);
@@ -462,6 +468,7 @@ app.post('/DVP/API/:version/BusinessUnit', jwt({secret: secret.Secret}),authoriz
 app.put('/DVP/API/:version/BusinessUnit/:unitname', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.UpdateBusinessUnit);
 app.put('/DVP/API/:version/BusinessUnit/:unitname/Groups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.UpdateBusinessUnitUserGroups);
 app.get('/DVP/API/:version/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnits);
+app.get('/DVP/API/:version/ConsolidatedBusinessUnits/:consolidated', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnits); //Todo: add the scope
 app.get('/DVP/API/:version/BusinessUnitsWithGroups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnitsWithGroups);
 app.get('/DVP/API/:version/BusinessUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnit);
 
@@ -471,6 +478,7 @@ app.delete('/DVP/API/:version/BusinessUnit/:name/Head/:hid', jwt({secret: secret
 app.put('/DVP/API/:version/BusinessUnit/:name/Heads', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadsToBusinessUnit);
 app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetSupervisorBusinessUnits);
 app.get('/DVP/API/:version/BusinessUnit/:name/Users', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUsersOfBusinessUnits);
+app.get('/DVP/API/:version/ConsolidatedBusinessUnit/:name/Users/:consolidated', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUsersOfBusinessUnits); //Todo: add the scope
 app.get('/DVP/API/:version/MyBusinessUnit', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetMyBusinessUnit);
 app.get('/DVP/API/:version/GetBusinessUnitAndGroups/:ResourceId', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetBusinessUnitAndGroupsByResourceId);
 
