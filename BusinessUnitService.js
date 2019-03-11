@@ -722,6 +722,8 @@ function GetUsersOfBusinessUnitsWithScopes(req, res) {
                         _userInstance.user_scopes  = item.user_scopes;
                         _userInstance.veeryaccount = item.veeryaccount;
                         _userInstance.user_meta = item.user_meta;
+                        _userInstance.group = item.group;
+                        _userInstance.company = item.company;
 
                         arr.push(_userInstance);
                     } else {
@@ -758,7 +760,7 @@ function GetUsersOfBusinessUnitsWithScopes(req, res) {
                     "password": 0,
                     "app_meta": 0,
                     "client_scopes": 0
-                }).populate('userref', '-password -app_meta -user_meta -user_scopes').lean().skip(skip)
+                }).populate('userref', '-password -app_meta -user_meta -user_scopes').populate('group', 'name').lean().skip(skip)
                     .limit(size).exec(returnFunc);
             }
             else {
@@ -766,14 +768,15 @@ function GetUsersOfBusinessUnitsWithScopes(req, res) {
                     "password": 0,
                     "app_meta": 0,
                     "client_scopes": 0
-                }).populate('userref', '-password -app_meta -user_meta -user_scopes').lean().exec(returnFunc);
+                }).populate('userref', '-password -app_meta -user_meta -user_scopes').populate('group', 'name').lean().exec(returnFunc);
             }
 
         };
 
         if (req.query.Page && req.query.Size) {
-            page = parseInt(req.query.Page),
-                size = parseInt(req.query.Size),
+
+            page = parseInt(req.query.Page);
+                size = parseInt(req.query.Size);
                 skip = page > 0 ? ((page - 1) * size) : 0;
             isPaging = true;
         }
