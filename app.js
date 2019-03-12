@@ -392,7 +392,7 @@ app.put('/DVP/API/:version/ExternalUser/:id/FormSubmission',jwt({secret: secret.
 
 app.post('/DVP/API/:version/UserGroup',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"write"}), userGroupService.CreateUserGroup);
 app.get('/DVP/API/:version/UserGroups',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetGroupsAndUsers);
-app.get('/DVP/API/:version/ConsolidatedUserGroups/:consolidated',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetGroupsAndUsers); //Todo: add the scope
+app.get('/DVP/API/:version/ConsolidatedUserGroups/:consolidated',jwt({secret: secret.Secret}), authorization({resource:"consolidatedreports", action:"read"}), userGroupService.GetGroupsAndUsers);
 app.get('/DVP/API/:version/UserGroup/:id',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetUserGroup);
 app.get('/DVP/API/:version/UserGroup/:id/members',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetGroupMembers);
 app.get('/DVP/API/:version/UserGroupByName/:name',jwt({secret: secret.Secret}), authorization({resource:"userGroup", action:"read"}), userGroupService.GetUserGroupByName);
@@ -468,7 +468,7 @@ app.post('/DVP/API/:version/BusinessUnit', jwt({secret: secret.Secret}),authoriz
 app.put('/DVP/API/:version/BusinessUnit/:unitname', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.UpdateBusinessUnit);
 app.put('/DVP/API/:version/BusinessUnit/:unitname/Groups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}), businessUnitService.UpdateBusinessUnitUserGroups);
 app.get('/DVP/API/:version/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnits);
-app.get('/DVP/API/:version/ConsolidatedBusinessUnits/:consolidated', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnits); //Todo: add the scope
+app.get('/DVP/API/:version/ConsolidatedBusinessUnits/:consolidated', jwt({secret: secret.Secret}),authorization({resource:"consolidatedreports", action:"read"}), businessUnitService.GetBusinessUnits);
 app.get('/DVP/API/:version/BusinessUnitsWithGroups', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnitsWithGroups);
 app.get('/DVP/API/:version/BusinessUnit/:unitName', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), businessUnitService.GetBusinessUnit);
 
@@ -478,8 +478,9 @@ app.delete('/DVP/API/:version/BusinessUnit/:name/Head/:hid', jwt({secret: secret
 app.put('/DVP/API/:version/BusinessUnit/:name/Heads', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"write"}), businessUnitService.AddHeadsToBusinessUnit);
 app.get('/DVP/API/:version/Supervisor/:sid/BusinessUnits', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetSupervisorBusinessUnits);
 app.get('/DVP/API/:version/BusinessUnit/:name/Users', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUsersOfBusinessUnits);
-app.get('/DVP/API/:version/ConsolidatedBusinessUnit/:name/Users/:consolidated', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUsersOfBusinessUnits); //Todo: add the scope
-app.get('/DVP/API/:version/ConsolidatedBusinessUnitFull/:name/Users/:consolidated', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUsersOfBusinessUnitsWithScopes);
+app.get('/DVP/API/:version/ConsolidatedBusinessUnit/:name/Users/:consolidated', jwt({secret: secret.Secret}),authorization({resource:"consolidatedreports", action:"read"}), businessUnitService.GetUsersOfBusinessUnits);
+app.get('/DVP/API/:version/ConsolidatedBusinessUnitFull/:name/Users/:consolidated', jwt({secret: secret.Secret}),authorization({resource:"consolidatedreports", action:"read"}), businessUnitService.GetUsersOfBusinessUnitsWithScopes);
+app.get('/DVP/API/:version/BusinessUnitFull/:name/Users', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetUsersOfBusinessUnitsWithScopes);
 app.get('/DVP/API/:version/MyBusinessUnit', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetMyBusinessUnit);
 app.get('/DVP/API/:version/GetBusinessUnitAndGroups/:ResourceId', jwt({secret: secret.Secret}),authorization({resource:"userGroup", action:"read"}), businessUnitService.GetBusinessUnitAndGroupsByResourceId);
 
