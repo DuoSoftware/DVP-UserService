@@ -717,14 +717,28 @@ function GetUsersOfBusinessUnitsWithScopes(req, res) {
                 var users = resUsers.reduce(function (arr, item, index, items) {
 
                     if (item && item.userref) {
-                        var _userInstance = item.userref;
+                        var _userInstance = {};
                         _userInstance.resourceid = item.resource_id;
                         _userInstance.user_scopes  = item.user_scopes;
                         _userInstance.veeryaccount = item.veeryaccount;
                         _userInstance.user_meta = item.user_meta;
                         _userInstance.group = item.group;
                         _userInstance.company = item.company;
-
+                        _userInstance.tenant = item.userref.tenant;
+                        _userInstance.systemuser = item.userref.systemuser;
+                        _userInstance.title = item.userref.title;
+                        _userInstance.Active = item.userref.Active;
+                        _userInstance.firstname = item.userref.firstname;
+                        _userInstance.lastname = item.userref.lastname;
+                        _userInstance.email = item.userref.email;
+                        _userInstance.created_at = item.userref.created_at;
+                        _userInstance.updated_at = item.userref.updated_at;
+                        _userInstance.auth_mechanism = item.userref.auth_mechanism;
+                        _userInstance.multi_login = item.userref.multi_login;
+                        _userInstance.username = item.userref.username;
+                        _userInstance.client_scopes = item.userref.client_scopes;
+                        _userInstance.joined = item.userref.joined;
+                        
                         arr.push(_userInstance);
                     } else {
 
