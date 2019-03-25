@@ -764,7 +764,7 @@ function AddOrUpdateAbandonCallRedialConfig(req, res){
 
         if(abdConfig)
         {
-            AbandonCall.findOneAndUpdate({tenant: tenant, company: company}, {redialCampaignId: req.body.campaignId, redialTime: req.body.redialTime, updated_at: Date.Now()}, function (err, abandConfig) {
+            AbandonCall.findOneAndUpdate({tenant: tenant, company: company}, {redialCampaignId: req.body.redialCampaignId, redialTime: req.body.redialTime, updated_at: Date.now()}, function (err, abandConfig) {
                 if(abandConfig)
                 {
                     jsonString = messageFormatter.FormatMessage(err, "Update Abandon Call Redial Config Successful", true, abandConfig);
