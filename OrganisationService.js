@@ -760,41 +760,51 @@ function AddOrUpdateAbandonCallRedialConfig(req, res){
     var tenant = parseInt(req.user.tenant);
     var jsonString;
 
-    AbandonCall.findOneAndUpdate({tenant: tenant, company: company}, {redialCampaignId: req.body.campaignId, redialTime: req.body.redialTime, updated_at: Date.Now()}, function (err, abandConfig) {
-        if (err) {
-            jsonString = messageFormatter.FormatMessage(err, "Update Abandon Call Redial Config Failed", false, undefined);
-        } else {
-            if(abandConfig)
-            {
-                jsonString = messageFormatter.FormatMessage(err, "Update Abandon Call Redial Config Successful", true, abandConfig);
-            }
-            else
-            {
-                var abandonObj = AbandonCall({
-                    company:company,
-                    tenant:tenant,
-                    redialCampaignId: req.body.campaignId,
-                    redialTime: req.body.redialTime,
-                    created_at: Date.now(),
-                    updated_at: Date.now()
-                });
+    AbandonCall.findOne({tenant: tenant, company: company}, function (err, abdConfig) {
 
-
-                abandonObj.save(function (err, abandonSave) {
-                    if (err) {
-                        jsonString = messageFormatter.FormatMessage(err, "Update Abandon Call Redial Config Failed", false, undefined);
-                        res.end(jsonString);
-                    } else {
-
-                        jsonString = messageFormatter.FormatMessage(undefined, "Update Abandon Call Redial Config Successful", true, abandonSave);
-                        res.end(jsonString);
-                    }
-                });
-            }
+        if(abdConfig)
+        {
+            AbandonCall.findOneAndUpdate({tenant: tenant, company: company}, {redialCampaignId: req.body.campaignId, redialTime: req.body.redialTime, updated_at: Date.Now()}, function (err, abandConfig) {
+                if(abandConfig)
+                {
+                    jsonString = messageFormatter.FormatMessage(err, "Update Abandon Call Redial Config Successful", true, abandConfig);
+                }
+                else{
+                    jsonString = messageFormatter.FormatMessage(err, "Update Abandon Call Redial Config Failed", false, null);
+                }
+                res.end(jsonString);
+            });
 
         }
-        res.end(jsonString);
+        else
+        {
+            var abandonObj = AbandonCall({
+                company:company,
+                tenant:tenant,
+                redialCampaignId: req.body.campaignId,
+                redialTime: req.body.redialTime,
+                created_at: Date.now(),
+                updated_at: Date.now()
+            });
+
+
+            abandonObj.save(function (err, abandonSave) {
+                if (err) {
+                    jsonString = messageFormatter.FormatMessage(err, "Update Abandon Call Redial Config Failed", false, null);
+                } else {
+                    jsonString = messageFormatter.FormatMessage(undefined, "Update Abandon Call Redial Config Successful", true, abandonSave);
+
+                }
+                res.end(jsonString);
+            });
+
+        }
+
+
     });
+
+
+
 }
 
 function ActivateOrganisation(req, res){
