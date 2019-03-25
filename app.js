@@ -292,6 +292,11 @@ app.put('/DVP/API/:version/Organisation/Package/:packageName/Unit/:unitName/:top
 app.get('/DVP/API/:version/Organisation/SpaceLimit/:spaceType', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetSpaceLimit);
 app.get('/DVP/API/:version/Organisation/SpaceLimits/:spaceType', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetSpaceLimitForTenant);
 
+//Abandon Call Redial Config
+
+app.post('/DVP/API/:version/Organisation/AbandonCallRedialConfig', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"write"}), organisationService.AddOrUpdateAbandonCallRedialConfig);
+app.get('/DVP/API/:version/Organisation/AbandonCallRedialConfig', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetAbandonCallRedialConfig);
+
 app.get('/DVP/API/:version/Resources', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"read"}), resourceService.GetResources);
 app.get('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"read"}), resourceService.GetResource);
 app.delete('/DVP/API/:version/Resource/:resourceName', jwt({secret: secret.Secret}),authorization({resource:"resource", action:"delete"}), resourceService.DeleteResource);
