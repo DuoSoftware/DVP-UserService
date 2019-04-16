@@ -42,6 +42,66 @@ function GetExternalUsers(req, res) {
     });
 
 }
+function GetExternalUsersByHint(req, res) {
+
+
+    logger.debug("DVP-UserService.GetExternalUsersByHint Internal method ");
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    ExternalUser.find({company: company, tenant: tenant,name: new RegExp( '.*' + req.params.hint + '.*', "i")}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get External Users By Hint Failed", false, undefined);
+
+        } else {
+
+            if (users) {
+
+
+                jsonString = messageFormatter.FormatMessage(err, "Get External Users By Hint Successful", true, users);
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "No External Users Found", false, undefined);
+
+            }
+        }
+
+        res.end(jsonString);
+    });
+
+}
+function GetExternalUserCount(req, res) {
+
+
+    logger.debug("DVP-UserService.GetExternalUserCount Internal method ");
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    ExternalUser.count({company: company, tenant: tenant}, function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get External User Count Failed", false, undefined);
+
+        } else {
+
+            if (users) {
+
+
+                jsonString = messageFormatter.FormatMessage(err, "Get User Count Successful", true, users);
+
+            } else {
+
+                jsonString = messageFormatter.FormatMessage(undefined, "No External Users Found", false, undefined);
+
+            }
+        }
+
+        res.end(jsonString);
+    });
+
+}
 
 function GetExternalUser(req, res) {
 
@@ -176,7 +236,7 @@ function CreateExternalUser(req, res) {
     if (req.body && req.body.firstname && req.body.lastname && req.body.phone ) {
         var extUser = ExternalUser({
             title: req.body.title,
-            name: req.body.name,
+            name: req.body.firstname+" "+req.body.lastname,
             avatar: req.body.avatar,
             birthday: req.body.birthday,
             gender: req.body.gender,
@@ -782,7 +842,7 @@ function SearchExternalUsers(req, res) {
     }, {score: {$meta: "textScore"}}).populate({
         path: 'form_submission',
         populate: {path: 'form'}
-    }).sort({score: {$meta: 'textScore'}})
+    }).sort({score: {$meta: 'textScore'}}).limit(10)
         .exec(function (err, users) {
             if (err) {
 
@@ -1195,4 +1255,6 @@ module.exports.AddAccessibleFieldConfig = AddAccessibleFieldConfig;
 module.exports.GetDefaultAccessibleFieldConfig = GetDefaultAccessibleFieldConfig;
 module.exports.GetUserFields = GetUserFields;
 module.exports.AddDefaultAccessibleFields = AddDefaultAccessibleFields;
+module.exports.GetExternalUserCount = GetExternalUserCount;
+module.exports.GetExternalUsersByHint = GetExternalUsersByHint;
 

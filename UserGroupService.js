@@ -299,9 +299,13 @@ function GetGroupsAndUsers(req, res){
     var jsonString;
     var emptyArr = [];
 
+    var query = {tenant: tenant};
 
+    if(req.params.consolidated !== 'consolidated'){
+        query["company"] = company;
+    }
 
-    UserGroup.find({company: company, tenant: tenant}).populate('supervisors')
+    UserGroup.find(query).populate('supervisors')
         .select({"password":0, "user_meta": 0, "app_meta":0, "user_scopes":0, "client_scopes":0})
         .lean()
         .exec( function(err, groups)
@@ -319,7 +323,14 @@ function GetGroupsAndUsers(req, res){
                     {
                         return grp._id.toString();
                     });
-                    UserAccount.find({company: company, tenant: tenant, group: {$in: grpIdArr}}).populate('userref' , '-password')
+
+                    var userQuery = {tenant: tenant, group: {$in: grpIdArr}};
+
+                    if(req.params.consolidated !== 'consolidated'){
+                        userQuery["company"] = company;
+                    }
+
+                    UserAccount.find(userQuery).populate('userref' , '-password')
                         .lean()
                         .exec( function(err, userAccounts)
                         {

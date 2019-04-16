@@ -1,5 +1,4 @@
-var mongoose = require('mongoose');
-//var ObjectId = mongoose.Types.ObjectId;
+
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var User = require('dvp-mongomodels/model/User');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');

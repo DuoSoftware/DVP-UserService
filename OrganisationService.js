@@ -8,6 +8,7 @@ var Org = require('dvp-mongomodels/model/Organisation');
 var User = require('dvp-mongomodels/model/User');
 var VPackage = require('dvp-mongomodels/model/Package');
 var PackageUnit = require('dvp-mongomodels/model/PackageUnit');
+var AbandonCall = require('dvp-mongomodels/model/AbandonRedialConfig');
 var Console = require('dvp-mongomodels/model/Console');
 var EventEmitter = require('events').EventEmitter;
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
@@ -732,6 +733,78 @@ function UpdateOrganisation(req, res){
     }else{
         jsonString = messageFormatter.FormatMessage(undefined, "Update Organisation Failed", false, undefined);
     }
+}
+
+function GetAbandonCallRedialConfig(req, res){
+    logger.debug("DVP-UserService.GetAbandonCallRedialConfig Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    AbandonCall.findOne({tenant: tenant, company: company}, function (err, abandConfig) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Abandon Call Redial Config Failed", false, undefined);
+        } else {
+            jsonString = messageFormatter.FormatMessage(err, "Get Abandon Call Redial Config Successful", true, abandConfig);
+
+        }
+        res.end(jsonString);
+    });
+}
+
+function AddOrUpdateAbandonCallRedialConfig(req, res){
+    logger.debug("DVP-UserService.AddOrUpdateAbandonCallRedialConfig Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+
+    AbandonCall.findOne({tenant: tenant, company: company}, function (err, abdConfig) {
+
+        if(abdConfig)
+        {
+            AbandonCall.findOneAndUpdate({tenant: tenant, company: company}, {redialCampaignId: req.body.redialCampaignId, redialTime: req.body.redialTime, camScheduleId: req.body.camScheduleId, categoryId: req.body.categoryId, abandonThreshold: req.body.abandonThreshold, updated_at: Date.now()}, function (err, abandConfig) {
+                if(abandConfig)
+                {
+                    jsonString = messageFormatter.FormatMessage(err, "Update Abandon Call Redial Config Successful", true, abandConfig);
+                }
+                else{
+                    jsonString = messageFormatter.FormatMessage(err, "Update Abandon Call Redial Config Failed", false, null);
+                }
+                res.end(jsonString);
+            });
+
+        }
+        else
+        {
+            var abandonObj = AbandonCall({
+                company:company,
+                tenant:tenant,
+                redialCampaignId: req.body.campaignId,
+                redialTime: req.body.redialTime,
+                created_at: Date.now(),
+                updated_at: Date.now()
+            });
+
+
+            abandonObj.save(function (err, abandonSave) {
+                if (err) {
+                    jsonString = messageFormatter.FormatMessage(err, "Update Abandon Call Redial Config Failed", false, null);
+                } else {
+                    jsonString = messageFormatter.FormatMessage(undefined, "Update Abandon Call Redial Config Successful", true, abandonSave);
+
+                }
+                res.end(jsonString);
+            });
+
+        }
+
+
+    });
+
+
+
 }
 
 function ActivateOrganisation(req, res){
@@ -2130,3 +2203,5 @@ module.exports.GetBillingDetails = GetBillingDetails;
 module.exports.IsOrganizationExists = IsOrganizationExists;
 module.exports.GetSpaceLimit = GetSpaceLimit;
 module.exports.GetSpaceLimitForTenant = GetSpaceLimitForTenant;
+module.exports.AddOrUpdateAbandonCallRedialConfig = AddOrUpdateAbandonCallRedialConfig;
+module.exports.GetAbandonCallRedialConfig = GetAbandonCallRedialConfig;
