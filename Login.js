@@ -1097,7 +1097,7 @@ module.exports.LoginTest =  function(req, res) {
                                                                         GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
 
                                                                             if (token) {
-                                                                                return res.send(token);
+                                                                                return res.send("dsdsds");
                                                                             } else {
                                                                                 return res.status(401).send({message: 'Invalid email and/or password'});
                                                                             }
@@ -1133,7 +1133,7 @@ module.exports.LoginTest =  function(req, res) {
                                                     GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
 
                                                         if (token) {
-                                                            return res.send(token);
+                                                            return res.send("dsdsds");
                                                         } else {
                                                             return res.status(401).send({message: 'Invalid email and/or password'});
                                                         }
@@ -1230,7 +1230,7 @@ module.exports.LoginTest =  function(req, res) {
                                                                         GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
 
                                                                             if (token) {
-                                                                                return res.send(token);
+                                                                                return res.send("dsdsds");
                                                                             } else {
                                                                                 return res.status(401).send({message: 'Invalid email and/or password'});
                                                                             }
@@ -1266,7 +1266,7 @@ module.exports.LoginTest =  function(req, res) {
                                                     GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
 
                                                         if (token) {
-                                                            return res.send(token);
+                                                            return res.send("dsdsds");
                                                         } else {
                                                             return res.status(401).send({message: 'Invalid email and/or password'});
                                                         }
