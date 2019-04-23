@@ -182,6 +182,7 @@ app.delete('/oauth/token/revoke/:jti', jwt({secret: secret.Secret}), oauth2.revo
 
 
 app.post('/auth/login', Login.Login);
+app.post('/auth/logintest', Login.LoginTest);
 app.post('/auth/verify', Login.Validation);
 app.post('/auth/signup', Login.SignUP);
 app.post('/auth/forget', Login.ForgetPassword);
