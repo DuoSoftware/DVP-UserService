@@ -1594,7 +1594,7 @@ function GetMyrProfile(req, res) {
     try {
         User.findOne({ username: req.user.iss }).select("-password")
             .exec(function (err, users) {
-                if (err) {
+                if (err || !users) {
 
                     jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
                     res.end(jsonString);
@@ -1607,11 +1607,12 @@ function GetMyrProfile(req, res) {
                         company: company
                     }).populate({ path: 'group' }).exec(function (err, userAccount) {
 
-                        if (err) {
+                        if (err || !userAccount) {
 
                             jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed", false, undefined);
 
                         } else {
+
 
                             users = users.toObject();
                             users.group = userAccount.group;

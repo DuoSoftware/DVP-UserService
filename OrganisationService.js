@@ -314,6 +314,8 @@ function GetOrganisationPackages(req, res){
             res.end(jsonString);
         });
     }catch(ex){
+        jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+        res.end(jsonString);
         console.log(ex);
     }
 }
@@ -1584,8 +1586,10 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
                                             {scope: "resource", read: true},
                                             {scope: "package", read: true},
                                             {scope: "console", read: true},
-                                            {"scope": "myNavigation", "read": true},
-                                            {"scope": "myUserProfile", "read": true}
+                                            {scope: "myNavigation", read: true},
+                                            {scope: "myUserProfile", read: true},
+                                            {scope: "wallet", read: true,write: true}
+
                                         ],
                                         created_at: Date.now(),
                                         updated_at: Date.now(),
@@ -1599,10 +1603,24 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
                                             callback(err, undefined);
                                         } else {
                                             //rUser.company = cid;
+                                            if(account && org) {
+                                                user._doc.tenant = org.tenant;
+                                                user._doc.company = org.id;
+                                                user._doc.companyName = org.companyName;
+                                                user._doc.multi_login = account.multi_login;
+                                                user._doc.user_meta = account.user_meta;
+                                                user._doc.app_meta = account.app_meta;
+                                                user._doc.user_scopes = account.user_scopes;
+                                                user._doc.client_scopes = account.client_scopes;
+                                                user._doc.resourceid = account.resource_id;
+                                                user._doc.veeryaccount = account.veeryaccount;
+                                                user._doc.multi_login = account.multi_login;
+                                            }
+
                                             AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", user, true, function(jsonString){
                                                 console.log(jsonString);
+                                                callback(undefined, user);
                                             });
-                                            callback(undefined, user);
                                         }
                                     });
 

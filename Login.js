@@ -554,8 +554,9 @@ module.exports.Login =  function(req, res) {
             return res.status(401).send({message: 'User account deactivated, Please activate your account before login'});
         }
 
-        var companyReg = ["^",req.body.companyName,"$"].join('');
-        Org.findOne({"companyName": {$regex: companyReg, $options: "i"}}, function (err, org) {
+        //var companyReg = ["^",req.body.companyName,"$"].join('');
+        //Org.findOne({"companyName": {$regex: companyReg, $options: "i"}}, function (err, org) {
+        Org.findOne({"companyName": req.body.companyName}, function (err, org) {
             if(err){
                 return res.status(401).send({message: 'Company verification failed'});
             }
@@ -1357,7 +1358,6 @@ module.exports.SignUP = function(req, res) {
         }
 
 
-
         var secretKey = config.auth.recaptcha_key;
             //"6LezaAsUAAAAAFbtiyMzOlMmqEwzMwmMYszmO_Ve";
         var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + req.body['g-recaptcha-response'] + "&remoteip=" + req.connection.remoteAddress;
@@ -1572,7 +1572,7 @@ module.exports.SignUP = function(req, res) {
 
 };
 
-module.exports.Google = function(req, res) {
+module.exports.Google_back = function(req, res) {
     var accessTokenUrl = 'https://accounts.google.com/o/oauth2/token';
     var peopleApiUrl = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect';
     var params = {
@@ -1831,6 +1831,456 @@ module.exports.Google = function(req, res) {
     });
 };
 
+module.exports.Google = function(req, res) {
+    var accessTokenUrl = 'https://accounts.google.com/o/oauth2/token';
+    var peopleApiUrl = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect';
+    var params = {
+        code: req.body.code,
+        client_id: req.body.clientId,
+        client_secret: config.auth.GOOGLE_SECRET,
+        redirect_uri: req.body.redirectUri,
+        grant_type: 'authorization_code'
+    };
+
+    var claims_arr = ["all_all"];
+    if (req.body.scope && util.isArray(req.body.scope) && req.body.scope.length > 0) {
+
+        claims_arr = req.body.scope;
+    }
+
+    var companyName = req.body.companyname;
+
+    // Step 1. Exchange authorization code for access token.
+    request.post(accessTokenUrl, {json: true, form: params}, function (err, response, token) {
+
+        if (token && companyName) {
+            var accessToken = token.access_token;
+            var headers = {Authorization: 'Bearer ' + accessToken};
+
+            // Step 2. Retrieve profile information about the current user.
+            request.get({url: peopleApiUrl, headers: headers, json: true}, function (err, response, profile) {
+                if (profile && profile.error) {
+                    return res.status(500).send({message: profile.error.message});
+                }
+                // Step 3a. Link user accounts.
+                // if (req.header('Authorization')) {
+                //     User.findOne({"googleplus.cid": profile.sub}, function (err, existingUser) {
+                //         if (existingUser) {
+                //             return res.status(409).send({message: 'There is already a Google account that belongs to you'});
+                //         }
+                //         var token = req.header('Authorization').split(' ')[1];
+                //
+                //
+                //         GetVerification(token, function (err, payload) {
+                //
+                //             if (!err && payload) {
+                //                 User.findOne({username: payload.iss}, function (err, user) {
+                //                     if (!user) {
+                //                         return res.status(400).send({message: 'User not found'});
+                //                     }
+                //
+                //                     user.googleplus = {
+                //                         contact: profile.email,
+                //                         cid: profile.sub,
+                //                         type: "google",
+                //                         display: profile.name,
+                //                         verified: profile.email_verified
+                //                     };
+                //
+                //                     user.email = {
+                //                         contact: profile.email,
+                //                         type: "email",
+                //                         display: profile.name,
+                //                         verified: profile.email_verified
+                //                     };
+                //
+                //                     user.avatar = user.avatar || profile.picture.replace('sz=50', 'sz=200');
+                //                     user.displayname = user.displayname || profile.name;
+                //                     user.firstname = user.firstname || profile.given_name;
+                //                     user.lastname = user.lastname || profile.family_name;
+                //                     user.locale = user.locale || profile.locale,
+                //                         user.save(function () {
+                //                             //var token = GetJWT(user,claims_arr);
+                //
+                //                             Org.findOne({"companyName": companyName}, function (err, org) {
+                //                                 if (err) {
+                //                                     return res.status(401).send({message: 'Company verification failed'});
+                //                                 }
+                //
+                //                                 if (!org) {
+                //                                     return res.status(401).send({message: 'Invalid organization name'});
+                //                                 }
+                //
+                //                                 if (org && org.companyEnabled) {
+                //                                     UserAccount.findOne({
+                //                                         "tenant": org.tenant,
+                //                                         "company": org.id,
+                //                                         "user": existingUser.username
+                //                                     }, function (err, account) {
+                //                                         if (err) {
+                //                                             return res.status(401).send({message: 'User account verification failed'});
+                //                                         }
+                //                                         if (!account) {
+                //                                             return res.status(401).send({message: 'Invalid user account'});
+                //                                         }
+                //
+                //                                         if ((config.auth.login_verification === true || config.auth.login_verification === 'true')
+                //                                             && account.verified != true) {
+                //                                             return res.status(401).send({message: 'User account is not verified'});
+                //                                         }
+                //
+                //                                         if (account.active != true) {
+                //                                             return res.status(401).send({message: 'User account is not active'});
+                //                                         }
+                //
+                //
+                //                                         //user = user.toObject();
+                //                                         existingUser._doc.tenant = org.tenant;
+                //                                         existingUser._doc.company = org.id;
+                //                                         existingUser._doc.companyName = org.companyName;
+                //                                         existingUser._doc.multi_login = account.multi_login;
+                //                                         existingUser._doc.user_meta = account.user_meta;
+                //                                         existingUser._doc.app_meta = account.app_meta;
+                //                                         existingUser._doc.user_scopes = account.user_scopes;
+                //                                         existingUser._doc.client_scopes = account.client_scopes;
+                //                                         existingUser._doc.resourceid = account.resource_id;
+                //                                         existingUser._doc.veeryaccount = account.veeryaccount;
+                //                                         existingUser._doc.multi_login = account.multi_login;
+                //
+                //
+                //                                         GetJWT(existingUser, claims_arr, req.body.clientId, 'oauth-google+', req, function (err, isSuccess, token) {
+                //
+                //                                             if (token) {
+                //                                                 return res.send({state: "linking", token: token});
+                //                                             } else {
+                //                                                 return res.status(401).send({message: 'Invalid email and/or password'});
+                //                                             }
+                //                                         })
+                //                                     });
+                //                                 }
+                //                             });
+                //
+                //                         });
+                //                 });
+                //             } else {
+                //
+                //                 return res.status(401).send({message: 'Token is not verified'});
+                //             }
+                //
+                //         });
+                //     });
+                // } else {
+                //     // Step 3b. Create a new user account or return an existing one.
+
+
+                    User.findOne({"username": profile.email}, function (err, user) {
+                        if (!user) {
+                            ////////////////////////no user found should save user/account/organization ////////////////////////////////////////
+                            User.findOne({"googleplus.cid": profile.sub}, function (err, existingUser) {
+                                if (existingUser) {
+                                    //return res.send({state: 'existing',token: GetJWT(existingUser, claims_arr)});
+                                    Org.findOne({"companyName": companyName}, function (err, org) {
+                                        if (err) {
+                                            return res.status(401).send({message: 'Company verification failed'});
+                                        }
+
+                                        if (!org) {
+                                            return res.status(401).send({message: 'Invalid organization name'});
+                                        }
+
+                                        if (org && org.companyEnabled) {
+                                            UserAccount.findOne({
+                                                "tenant": org.tenant,
+                                                "company": org.id,
+                                                "user": existingUser.username
+                                            }, function (err, account) {
+                                                if (err) {
+                                                    return res.status(401).send({message: 'User account verification failed'});
+                                                }
+                                                if (!account) {
+                                                    return res.status(401).send({message: 'Invalid user account'});
+                                                }
+
+                                                if ((config.auth.login_verification === true || config.auth.login_verification === 'true')
+                                                    && account.verified != true) {
+                                                    return res.status(401).send({message: 'User account is not verified'});
+                                                }
+
+                                                if (account.active != true) {
+                                                    return res.status(401).send({message: 'User account is not active'});
+                                                }
+
+
+                                                //user = user.toObject();
+                                                existingUser._doc.tenant = org.tenant;
+                                                existingUser._doc.company = org.id;
+                                                existingUser._doc.companyName = org.companyName;
+                                                existingUser._doc.multi_login = account.multi_login;
+                                                existingUser._doc.user_meta = account.user_meta;
+                                                existingUser._doc.app_meta = account.app_meta;
+                                                existingUser._doc.user_scopes = account.user_scopes;
+                                                existingUser._doc.client_scopes = account.client_scopes;
+                                                existingUser._doc.resourceid = account.resource_id;
+                                                existingUser._doc.veeryaccount = account.veeryaccount;
+                                                existingUser._doc.multi_login = account.multi_login;
+
+                                                GetJWT(existingUser, claims_arr, req.body.clientId, 'oauth-google+', req, function (err, isSuccess, token) {
+
+                                                    if (token) {
+                                                        return res.send({state: "existing", token: token});
+                                                    } else {
+                                                        return res.status(401).send({message: 'Invalid email and/or password'});
+                                                    }
+                                                });
+                                            });
+                                        }
+                                    })
+                                } else {
+                                    var user = new User();
+                                    user.googleplus = {
+                                        contact: profile.email,
+                                        cid: profile.sub,
+                                        type: "google",
+                                        display: profile.name,
+                                        verified: profile.email_verified
+                                    };
+
+                                    user.email = {
+                                        contact: profile.email,
+                                        type: "email",
+                                        display: profile.name,
+                                        verified: profile.email_verified
+                                    };
+
+                                    user.avatar = profile.picture.replace('sz=50', 'sz=200');
+                                    user.displayName = profile.name;
+                                    user.firstname = profile.given_name;
+                                    user.lastname = profile.family_name;
+                                    user.locale = profile.locale;
+                                    user.company = 0;
+                                    user.tenant = 1;
+                                    user.systemuser = true,
+                                        user.username = profile.email;
+                                    user.user_meta = {role: "admin"};
+                                    user.user_scopes = [
+                                        {scope: "organisation", read: true, write: true},
+                                        {scope: "resource", read: true},
+                                        {scope: "package", read: true},
+                                        {scope: "console", read: true},
+                                        {"scope": "myNavigation", "read": true},
+                                        {"scope": "myUserProfile", "read": true}
+                                    ];
+
+
+                                    var defaultTimezone = {tz: "", utcOffset: ""};
+
+                                    user.save(function (err) {
+
+                                        if (!err) {
+                                            //profile.email
+                                            orgService.CreateOrganisationStanAlone(user, companyName, defaultTimezone, function (err, rUser) {
+                                                if (!err && rUser) {
+
+                                                    //var token = GetJWT(rUser,claims_arr);
+                                                    //res.send({state: "new", token: token});
+                                                    //
+                                                    //var sendObj = {
+                                                    //    "company": 0,
+                                                    //    "tenant": 1
+                                                    //};
+                                                    //
+                                                    //sendObj.to =  profile.email;
+                                                    //sendObj.from = "no-reply", sendObj.template = "By-User Registration Success";
+                                                    //sendObj.Parameters = user
+                                                    //
+                                                    //PublishToQueue("EMAILOUT", sendObj)
+                                                    GetJWT(rUser, claims_arr, req.body.clientId, 'oauth-google+', req, function (err, isSuccess, token) {
+
+                                                        if (token) {
+
+                                                            var sendObj = {
+                                                                "company": config.Tenant.activeCompany,
+                                                                "tenant": config.Tenant.activeTenant
+                                                            };
+
+                                                            sendObj.to = profile.email;
+                                                            sendObj.from = "no-reply",
+                                                                sendObj.template = "By-User Registration Success";
+                                                            sendObj.Parameters = user;
+
+                                                            PublishToQueue("EMAILOUT", sendObj);
+
+                                                            return res.send({state: "new", token: token});
+                                                        } else {
+                                                            return res.status(401).send({message: 'Invalid email and/or password'});
+                                                        }
+                                                    });
+
+
+                                                } else {
+
+                                                    res.status(404).send({message: 'Organization save failed'});
+                                                }
+                                            })
+
+                                        } else {
+                                            res.status(404).send({message: 'User save failed'});
+                                        }
+                                    });
+                                }
+                            });
+                        } else {
+
+                            User.findOne({"googleplus.cid": profile.sub}, function (err, existingUser) {
+                                if (existingUser) {
+                                    //return res.send({state: 'existing', token: GetJWT(existingUser, claims_arr)});
+
+                                    Org.findOne({"companyName": companyName}, function (err, org) {
+                                        if (err) {
+                                            return res.status(401).send({message: 'Company verification failed'});
+                                        }
+
+                                        if (!org) {
+                                            return res.status(401).send({message: 'Invalid organization name'});
+                                        }
+
+                                        if (org && org.companyEnabled) {
+                                            UserAccount.findOne({
+                                                "tenant": org.tenant,
+                                                "company": org.id,
+                                                "user": existingUser.username
+                                            }, function (err, account) {
+                                                if (err) {
+                                                    return res.status(401).send({message: 'User account verification failed'});
+                                                }
+                                                if (!account) {
+                                                    return res.status(401).send({message: 'Invalid user account'});
+                                                }
+
+                                                if ((config.auth.login_verification === true || config.auth.login_verification === 'true')
+                                                    && account.verified != true) {
+                                                    return res.status(401).send({message: 'User account is not verified'});
+                                                }
+
+                                                if (account.active != true) {
+                                                    return res.status(401).send({message: 'User account is not active'});
+                                                }
+
+
+                                                //user = user.toObject();
+                                                existingUser._doc.tenant = org.tenant;
+                                                existingUser._doc.company = org.id;
+                                                existingUser.companyName = org.companyName;
+                                                existingUser._doc.multi_login = account.multi_login;
+                                                existingUser._doc.user_meta = account.user_meta;
+                                                existingUser._doc.app_meta = account.app_meta;
+                                                existingUser._doc.user_scopes = account.user_scopes;
+                                                existingUser._doc.client_scopes = account.client_scopes;
+                                                existingUser._doc.resourceid = account.resource_id;
+                                                existingUser._doc.veeryaccount = account.veeryaccount;
+                                                existingUser._doc.multi_login = account.multi_login;
+
+
+                                                GetJWT(existingUser, claims_arr, req.body.clientId, 'oauth-google+', req, function (err, isSuccess, token) {
+
+                                                    if (token) {
+                                                        return res.send({state: "existing", token: token});
+                                                    } else {
+                                                        return res.status(401).send({message: 'Invalid email and/or password'});
+                                                    }
+                                                })
+                                            });
+                                        }
+                                    });
+                                } else {
+
+                                    user.googleplus = {
+                                        contact: profile.email,
+                                        cid: profile.sub,
+                                        type: "google",
+                                        display: profile.name,
+                                        verified: profile.email_verified
+                                    };
+
+
+                                    user.avatar = user.avatar || profile.picture.replace('sz=50', 'sz=200');
+                                    user.displayname = user.displayname || profile.name;
+                                    user.firstname = user.firstname || profile.given_name;
+                                    user.lastname = user.lastname || profile.family_name;
+                                    user.locale = user.locale || profile.locale,
+                                        user.save(function () {
+
+                                            Org.findOne({"companyName": companyName}, function (err, org) {
+                                                if (err) {
+                                                    return res.status(401).send({message: 'Company verification failed'});
+                                                }
+
+                                                if (!org) {
+                                                    return res.status(401).send({message: 'Invalid organization name'});
+                                                }
+
+                                                if (org && org.companyEnabled) {
+                                                    UserAccount.findOne({
+                                                        "tenant": org.tenant,
+                                                        "company": org.id,
+                                                        "user": user.username
+                                                    }, function (err, account) {
+                                                        if (err) {
+                                                            return res.status(401).send({message: 'User account verification failed'});
+                                                        }
+                                                        if (!account) {
+                                                            return res.status(401).send({message: 'Invalid user account'});
+                                                        }
+
+                                                        if ((config.auth.login_verification === true || config.auth.login_verification === 'true')
+                                                            && account.verified != true) {
+                                                            return res.status(401).send({message: 'User account is not verified'});
+                                                        }
+
+                                                        if (account.active != true) {
+                                                            return res.status(401).send({message: 'User account is not active'});
+                                                        }
+
+
+                                                        //user = user.toObject();
+                                                        user._doc.tenant = org.tenant;
+                                                        user._doc.company = org.id;
+                                                        user.companyName = org.companyName;
+                                                        user._doc.multi_login = account.multi_login;
+                                                        user._doc.user_meta = account.user_meta;
+                                                        user._doc.app_meta = account.app_meta;
+                                                        user._doc.user_scopes = account.user_scopes;
+                                                        user._doc.client_scopes = account.client_scopes;
+                                                        user._doc.resourceid = account.resource_id;
+                                                        user._doc.veeryaccount = account.veeryaccount;
+                                                        user._doc.multi_login = account.multi_login;
+
+                                                        GetJWT(user, claims_arr, req.body.clientId, 'oauth-google+', req, function (err, isSuccess, token) {
+
+                                                            if (token) {
+                                                                return res.send({state: "linking", token: token});
+                                                            } else {
+                                                                return res.status(401).send({message: 'Invalid email and/or password'});
+                                                            }
+                                                        });
+                                                    });
+                                                }
+                                            });
+
+                                        });
+                                }
+                            });
+
+                        }
+                    });
+                //}
+            });
+        } else {
+            return res.status(401).send({message: 'Token or CompanyName is not verified'});
+        }
+    });
+};
+
 module.exports.GitHub = function(req, res) {
     var accessTokenUrl = 'https://github.com/login/oauth/access_token';
     var userApiUrl = 'https://api.github.com/user';
@@ -1847,6 +2297,7 @@ module.exports.GitHub = function(req, res) {
         claims_arr = req.body.scope;
     }
 
+    var companyName = req.body.companyname;
     // Step 1. Exchange authorization code for access token.
     request.get({ url: accessTokenUrl, qs: params }, function(err, response, accessToken) {
         accessToken = qs.parse(accessToken);
@@ -1889,25 +2340,72 @@ module.exports.GitHub = function(req, res) {
                                     verified: true
                                 };
 
-                                user.avatar = user.avatar ||  profile.avatar_url;
+                                user.avatar = user.avatar || profile.avatar_url;
                                 user.displayname = user.displayname || profile.name;
 
-                                    user.save(function () {
+                                user.save(function () {
+
+                                    Org.findOne({"companyName": companyName}, function (err, org) {
+                                        if (err) {
+                                            return res.status(401).send({message: 'Company verification failed'});
+                                        }
+
+                                        if (!org) {
+                                            return res.status(401).send({message: 'Invalid organization name'});
+                                        }
+
+                                        if (org && org.companyEnabled) {
+                                            UserAccount.findOne({
+                                                "tenant": org.tenant,
+                                                "company": org.id,
+                                                "user": existingUser.username
+                                            }, function (err, account) {
+                                                if (err) {
+                                                    return res.status(401).send({message: 'User account verification failed'});
+                                                }
+                                                if (!account) {
+                                                    return res.status(401).send({message: 'Invalid user account'});
+                                                }
+
+                                                if ((config.auth.login_verification === true || config.auth.login_verification === 'true')
+                                                    && account.verified != true) {
+                                                    return res.status(401).send({message: 'User account is not verified'});
+                                                }
+
+                                                if (account.active != true) {
+                                                    return res.status(401).send({message: 'User account is not active'});
+                                                }
 
 
+                                                //user = user.toObject();
+                                                user._doc.tenant = org.tenant;
+                                                user._doc.company = org.id;
+                                                user.companyName = org.companyName;
+                                                user._doc.multi_login = account.multi_login;
+                                                user._doc.user_meta = account.user_meta;
+                                                user._doc.app_meta = account.app_meta;
+                                                user._doc.user_scopes = account.user_scopes;
+                                                user._doc.client_scopes = account.client_scopes;
+                                                user._doc.resourceid = account.resource_id;
+                                                user._doc.veeryaccount = account.veeryaccount;
+                                                user._doc.multi_login = account.multi_login;
 
-                                        GetJWT(user,claims_arr,req.body.clientId,'oauth-github', req,function(err, isSuccess, token){
 
-                                            if(token){
-                                                return res.send({state: "linking", token: token});
-                                            }else{
-                                                return res.status(401).send({message: 'Invalid email and/or password'});
-                                            }
-                                        });
+                                                GetJWT(user, claims_arr, req.body.clientId, 'oauth-github', req, function (err, isSuccess, token) {
 
-                                        //var token = GetJWT(user,claims_arr);
-                                        ///res.send({state: "linking",token: token});
+                                                    if (token) {
+                                                        return res.send({state: "linking", token: token});
+                                                    } else {
+                                                        return res.status(401).send({message: 'Invalid email and/or password'});
+                                                    }
+                                                });
+
+                                                //var token = GetJWT(user,claims_arr);
+                                                ///res.send({state: "linking",token: token});
+                                            });
+                                        }
                                     });
+                                });
                             });
                         } else {
 
@@ -1976,7 +2474,7 @@ module.exports.GitHub = function(req, res) {
                                     if (!err) {
 
                                         var defaultTimezone = {tz: "", utcOffset: ""};
-                                        orgService.CreateOrganisationStanAlone(user,profile.email, defaultTimezone, function (err, rUser) {
+                                        orgService.CreateOrganisationStanAlone(user,companyName, defaultTimezone, function (err, rUser) {
 
                                             if (!err && rUser) {
 
@@ -2021,19 +2519,65 @@ module.exports.GitHub = function(req, res) {
                         });
                     } else {
 
-
-
-
                         User.findOne({"github.cid": profile.id}, function (err, existingUser) {
                             if (existingUser) {
                                 //return res.send({state: 'existing', token: GetJWT(existingUser, claims_arr)});
 
-                                GetJWT(existingUser,claims_arr,req.body.clientId,'oauth-github',req, function(err, isSuccess, token){
+                                Org.findOne({"companyName": companyName}, function (err, org) {
+                                    if (err) {
+                                        return res.status(401).send({message: 'Company verification failed'});
+                                    }
 
-                                    if(token){
-                                        return res.send({state: "existing", token: token});
-                                    }else{
-                                        return res.status(401).send({message: 'Invalid email and/or password'});
+                                    if (!org) {
+                                        return res.status(401).send({message: 'Invalid organization name'});
+                                    }
+
+                                    if (org && org.companyEnabled) {
+                                        UserAccount.findOne({
+                                            "tenant": org.tenant,
+                                            "company": org.id,
+                                            "user": existingUser.username
+                                        }, function (err, account) {
+                                            if (err) {
+                                                return res.status(401).send({message: 'User account verification failed'});
+                                            }
+                                            if (!account) {
+                                                return res.status(401).send({message: 'Invalid user account'});
+                                            }
+
+                                            if ((config.auth.login_verification === true || config.auth.login_verification === 'true')
+                                                && account.verified != true) {
+                                                return res.status(401).send({message: 'User account is not verified'});
+                                            }
+
+                                            if (account.active != true) {
+                                                return res.status(401).send({message: 'User account is not active'});
+                                            }
+
+
+                                            //user = user.toObject();
+                                            existingUser._doc.tenant = org.tenant;
+                                            existingUser._doc.company = org.id;
+                                            existingUser.companyName = org.companyName;
+                                            existingUser._doc.multi_login = account.multi_login;
+                                            existingUser._doc.user_meta = account.user_meta;
+                                            existingUser._doc.app_meta = account.app_meta;
+                                            existingUser._doc.user_scopes = account.user_scopes;
+                                            existingUser._doc.client_scopes = account.client_scopes;
+                                            existingUser._doc.resourceid = account.resource_id;
+                                            existingUser._doc.veeryaccount = account.veeryaccount;
+                                            existingUser._doc.multi_login = account.multi_login;
+
+
+                                            GetJWT(existingUser, claims_arr, req.body.clientId, 'oauth-github', req, function (err, isSuccess, token) {
+
+                                                if (token) {
+                                                    return res.send({state: "existing", token: token});
+                                                } else {
+                                                    return res.status(401).send({message: 'Invalid email and/or password'});
+                                                }
+                                            });
+                                        });
                                     }
                                 });
                             } else {
@@ -2088,6 +2632,7 @@ module.exports.Facebook = function(req, res) {
         redirect_uri: req.body.redirectUri
     };
 
+    var companyName = req.body.companyname;
     var claims_arr = ["all_all"];
     if(req.body.scope && util.isArray(req.body.scope) && req.body.scope.length >0){
 
@@ -2096,17 +2641,16 @@ module.exports.Facebook = function(req, res) {
     // Step 1. Exchange authorization code for access token.
     request.get({ url: accessTokenUrl, qs: params, json: true }, function(err, response, accessToken) {
         if (response.statusCode !== 200) {
-            return res.status(500).send({ message: accessToken.error.message });
+            return res.status(500).send({message: accessToken.error.message});
         }
 
         // Step 2. Retrieve profile information about the current user.
-        request.get({ url: graphApiUrl, qs: accessToken, json: true }, function(err, response, profile) {
+        request.get({url: graphApiUrl, qs: accessToken, json: true}, function (err, response, profile) {
             if (response.statusCode !== 200) {
 
-                return res.status(500).send({ message: profile.error.message });
+                return res.status(500).send({message: profile.error.message});
             }
             if (req.header('Authorization')) {
-
 
 
                 User.findOne({"facebook.cid": profile.id}, function (err, existingUser) {
@@ -2138,21 +2682,71 @@ module.exports.Facebook = function(req, res) {
                                     display: profile.name,
                                     verified: true
                                 };
-                                user.avatar = user.avatar ||  'https://graph.facebook.com/v2.3/' + profile.id + '/picture?type=large';
+                                user.avatar = user.avatar || 'https://graph.facebook.com/v2.3/' + profile.id + '/picture?type=large';
                                 user.displayname = user.displayname || profile.name;
                                 user.firstname = user.firstname || profile.first_name;
-                                user.lastname = user.lastname ||profile.last_name;
+                                user.lastname = user.lastname || profile.last_name;
                                 //user.locale = user.locale || profile.locale,
                                 user.save(function () {
                                     //var token = GetJWT(user,claims_arr);
                                     //res.send({state: "linking",token: token});
 
-                                    GetJWT(user,claims_arr,req.body.clientId,'oauth-facebook', req,function(err, isSuccess, token){
 
-                                        if(token){
-                                            return res.send({state: "linking", token: token});
-                                        }else{
-                                            return res.status(401).send({message: 'Invalid email and/or password'});
+                                    Org.findOne({"companyName": companyName}, function (err, org) {
+                                        if (err) {
+                                            return res.status(401).send({message: 'Company verification failed'});
+                                        }
+
+                                        if (!org) {
+                                            return res.status(401).send({message: 'Invalid organization name'});
+                                        }
+
+                                        if (org && org.companyEnabled) {
+                                            UserAccount.findOne({
+                                                "tenant": org.tenant,
+                                                "company": org.id,
+                                                "user": existingUser.username
+                                            }, function (err, account) {
+                                                if (err) {
+                                                    return res.status(401).send({message: 'User account verification failed'});
+                                                }
+                                                if (!account) {
+                                                    return res.status(401).send({message: 'Invalid user account'});
+                                                }
+
+                                                if ((config.auth.login_verification === true || config.auth.login_verification === 'true')
+                                                    && account.verified != true) {
+                                                    return res.status(401).send({message: 'User account is not verified'});
+                                                }
+
+                                                if (account.active != true) {
+                                                    return res.status(401).send({message: 'User account is not active'});
+                                                }
+
+
+                                                //user = user.toObject();
+                                                existingUser._doc.tenant = org.tenant;
+                                                existingUser._doc.company = org.id;
+                                                existingUser.companyName = org.companyName;
+                                                existingUser._doc.multi_login = account.multi_login;
+                                                existingUser._doc.user_meta = account.user_meta;
+                                                existingUser._doc.app_meta = account.app_meta;
+                                                existingUser._doc.user_scopes = account.user_scopes;
+                                                existingUser._doc.client_scopes = account.client_scopes;
+                                                existingUser._doc.resourceid = account.resource_id;
+                                                existingUser._doc.veeryaccount = account.veeryaccount;
+                                                existingUser._doc.multi_login = account.multi_login;
+
+
+                                                GetJWT(existingUser, claims_arr, req.body.clientId, 'oauth-facebook', req, function (err, isSuccess, token) {
+
+                                                    if (token) {
+                                                        return res.send({state: "linking", token: token});
+                                                    } else {
+                                                        return res.status(401).send({message: 'Invalid email and/or password'});
+                                                    }
+                                                });
+                                            })
                                         }
                                     });
                                 });
@@ -2169,137 +2763,238 @@ module.exports.Facebook = function(req, res) {
                 // Step 3. Create a new user account or return an existing one.
 
 
-
-
-                User.findOne({"username": profile.email},  function (err, user) {
+                User.findOne({"username": profile.email}, function (err, user) {
                     if (!user) {
                         User.findOne({"facebook.cid": profile.id}, function (err, existingUser) {
                             if (existingUser) {
                                 //return res.send({state: 'existing',token: GetJWT(existingUser, claims_arr)});
 
-                                GetJWT(existingUser,claims_arr,req.body.clientId,'oauth-facebook',req, function(err, isSuccess, token){
+                                //////////////////////////////////////////////////////////////////////////////////////
 
-                                    if(token){
-                                        return res.send({state: "existing", token: token});
-                                    }else{
-                                        return res.status(401).send({message: 'Invalid email and/or password'});
+                                Org.findOne({"companyName": companyName}, function (err, org) {
+                                    if (err) {
+                                        return res.status(401).send({message: 'Company verification failed'});
                                     }
-                                });
-                            }
-                            var user = new User();
-                            user.facebook = {
-                                contact: profile.email,
-                                cid: profile.id,
-                                type: "facebook",
-                                display: profile.name,
-                                verified: true
-                            };
 
-                            user.email = {
-                                contact: profile.email,
-                                type: "email",
-                                display: profile.name,
-                                verified: true
-                            };
+                                    if (!org) {
+                                        return res.status(401).send({message: 'Invalid organization name'});
+                                    }
 
-                            user.avatar = 'https://graph.facebook.com/v2.3/' + profile.id + '/picture?type=large';
-                            user.displayName = profile.name;
-                            user.firstname = profile.first_name;
-                            user.lastname = profile.last_name;
-                            //user.locale = profile.locale;
-                            user.company = 0;
-                            user.tenant = 1;
-                            user.systemuser = true,
-                                user.username = profile.email;
-                            user.user_meta = {role: "admin"};
-                            user.user_scopes = [
-                                {scope: "organisation", read: true, write: true},
-                                {scope: "resource", read: true},
-                                {scope: "package", read: true},
-                                {scope: "console", read: true},
-                                {"scope": "myNavigation", "read": true},
-                                {"scope": "myUserProfile", "read": true}
-                            ];
+                                    if (org && org.companyEnabled) {
+                                        UserAccount.findOne({
+                                            "tenant": org.tenant,
+                                            "company": org.id,
+                                            "user": existingUser.username
+                                        }, function (err, account) {
+                                            if (err) {
+                                                return res.status(401).send({message: 'User account verification failed'});
+                                            }
+                                            if (!account) {
+                                                return res.status(401).send({message: 'Invalid user account'});
+                                            }
+
+                                            if ((config.auth.login_verification === true || config.auth.login_verification === 'true')
+                                                && account.verified != true) {
+                                                return res.status(401).send({message: 'User account is not verified'});
+                                            }
+
+                                            if (account.active != true) {
+                                                return res.status(401).send({message: 'User account is not active'});
+                                            }
 
 
-                            user.save(function (err) {
-
-                                if(!err) {
-                                    var defaultTimezone = {tz: "", utcOffset: ""};
-
-                                    orgService.CreateOrganisationStanAlone(user,profile.email, defaultTimezone,function(err, rUser){
-
-                                        if(!err && rUser ){
-
-                                            //var token = GetJWT(rUser,["all_all"]);
-                                            //res.send({state: "new", token: token});
-                                            //
-                                            //var sendObj = {
-                                            //    "company": 0,
-                                            //    "tenant": 1
-                                            //};
-                                            //
-                                            //sendObj.to =  profile.email;
-                                            //sendObj.from = "no-reply",
-                                            //    sendObj.template = "By-User Registration Success";
-                                            //sendObj.Parameters = user
-                                            //
-                                            //PublishToQueue("EMAILOUT", sendObj)
+                                            //user = user.toObject();
+                                            existingUser._doc.tenant = org.tenant;
+                                            existingUser._doc.company = org.id;
+                                            existingUser.companyName = org.companyName;
+                                            existingUser._doc.multi_login = account.multi_login;
+                                            existingUser._doc.user_meta = account.user_meta;
+                                            existingUser._doc.app_meta = account.app_meta;
+                                            existingUser._doc.user_scopes = account.user_scopes;
+                                            existingUser._doc.client_scopes = account.client_scopes;
+                                            existingUser._doc.resourceid = account.resource_id;
+                                            existingUser._doc.veeryaccount = account.veeryaccount;
+                                            existingUser._doc.multi_login = account.multi_login;
 
 
+                                            GetJWT(existingUser, claims_arr, req.body.clientId, 'oauth-facebook', req, function (err, isSuccess, token) {
 
-                                            GetJWT(rUser,claims_arr,req.body.clientId,'oauth-facebook',req, function(err, isSuccess, token){
-
-                                                if(token){
-
-                                                    var sendObj = {
-                                                        "company": config.Tenant.activeCompany,
-                                                        "tenant": config.Tenant.activeTenant
-                                                    };
-
-                                                    sendObj.to =  profile.email;
-                                                    sendObj.from = "no-reply";
-                                                    sendObj.template = "By-User Registration Success";
-                                                    sendObj.Parameters = user;
-
-                                                    PublishToQueue("EMAILOUT", sendObj);
-
-                                                    return res.send({state: "new", token: token});
-                                                }else{
+                                                if (token) {
+                                                    return res.send({state: "existing", token: token});
+                                                } else {
                                                     return res.status(401).send({message: 'Invalid email and/or password'});
                                                 }
                                             });
+                                        })
+                                    }
+                                });
+                            } else {
 
 
-                                        }else{
+                                var user = new User();
+                                user.facebook = {
+                                    contact: profile.email,
+                                    cid: profile.id,
+                                    type: "facebook",
+                                    display: profile.name,
+                                    verified: true
+                                };
 
-                                            res.status(404).send({message: 'Organization save failed'});
-                                        }
-                                    })
+                                user.email = {
+                                    contact: profile.email,
+                                    type: "email",
+                                    display: profile.name,
+                                    verified: true
+                                };
+
+                                user.avatar = 'https://graph.facebook.com/v2.3/' + profile.id + '/picture?type=large';
+                                user.displayName = profile.name;
+                                user.firstname = profile.first_name;
+                                user.lastname = profile.last_name;
+                                //user.locale = profile.locale;
+                                user.company = 0;
+                                user.tenant = 1;
+                                user.systemuser = true,
+                                    user.username = profile.email;
+                                user.user_meta = {role: "admin"};
+                                user.user_scopes = [
+                                    {scope: "organisation", read: true, write: true},
+                                    {scope: "resource", read: true},
+                                    {scope: "package", read: true},
+                                    {scope: "console", read: true},
+                                    {"scope": "myNavigation", "read": true},
+                                    {"scope": "myUserProfile", "read": true}
+                                ];
 
 
-                                }else{
-                                    res.status(404).send({message: 'User save failed'});
+                                user.save(function (err) {
 
-                                }
-                            });
+                                    if (!err) {
+                                        var defaultTimezone = {tz: "", utcOffset: ""};
+
+                                        orgService.CreateOrganisationStanAlone(user, companyName, defaultTimezone, function (err, rUser) {
+
+                                            if (!err && rUser) {
+
+                                                //var token = GetJWT(rUser,["all_all"]);
+                                                //res.send({state: "new", token: token});
+                                                //
+                                                //var sendObj = {
+                                                //    "company": 0,
+                                                //    "tenant": 1
+                                                //};
+                                                //
+                                                //sendObj.to =  profile.email;
+                                                //sendObj.from = "no-reply",
+                                                //    sendObj.template = "By-User Registration Success";
+                                                //sendObj.Parameters = user
+                                                //
+                                                //PublishToQueue("EMAILOUT", sendObj)
+
+
+                                                GetJWT(rUser, claims_arr, req.body.clientId, 'oauth-facebook', req, function (err, isSuccess, token) {
+
+                                                    if (token) {
+
+                                                        var sendObj = {
+                                                            "company": config.Tenant.activeCompany,
+                                                            "tenant": config.Tenant.activeTenant
+                                                        };
+
+                                                        sendObj.to = profile.email;
+                                                        sendObj.from = "no-reply";
+                                                        sendObj.template = "By-User Registration Success";
+                                                        sendObj.Parameters = user;
+
+                                                        PublishToQueue("EMAILOUT", sendObj);
+
+                                                        return res.send({state: "new", token: token});
+                                                    } else {
+                                                        return res.status(401).send({message: 'Invalid email and/or password'});
+                                                    }
+                                                });
+
+
+                                            } else {
+
+                                                res.status(404).send({message: 'Organization save failed'});
+                                            }
+                                        });
+
+
+                                    } else {
+                                        res.status(404).send({message: 'User save failed'});
+
+                                    }
+                                });
+                            }
                         });
+
                     } else {
 
                         User.findOne({"facebook.cid": profile.id}, function (err, existingUser) {
                             if (existingUser) {
                                 //return res.send({state: 'existing', token: GetJWT(existingUser, claims_arr)});
 
-                                GetJWT(existingUser,claims_arr,req.body.clientId,'oauth-facebook', req,function(err, isSuccess, token){
 
-                                    if(token){
-                                        return res.send({state: "existing", token: token});
-                                    }else{
-                                        return res.status(401).send({message: 'Invalid email and/or password'});
+                                Org.findOne({"companyName": companyName}, function (err, org) {
+                                    if (err) {
+                                        return res.status(401).send({message: 'Company verification failed'});
+                                    }
+
+                                    if (!org) {
+                                        return res.status(401).send({message: 'Invalid organization name'});
+                                    }
+
+                                    if (org && org.companyEnabled) {
+                                        UserAccount.findOne({
+                                            "tenant": org.tenant,
+                                            "company": org.id,
+                                            "user": existingUser.username
+                                        }, function (err, account) {
+                                            if (err) {
+                                                return res.status(401).send({message: 'User account verification failed'});
+                                            }
+                                            if (!account) {
+                                                return res.status(401).send({message: 'Invalid user account'});
+                                            }
+
+                                            if ((config.auth.login_verification === true || config.auth.login_verification === 'true')
+                                                && account.verified != true) {
+                                                return res.status(401).send({message: 'User account is not verified'});
+                                            }
+
+                                            if (account.active != true) {
+                                                return res.status(401).send({message: 'User account is not active'});
+                                            }
+
+
+                                            //user = user.toObject();
+                                            existingUser._doc.tenant = org.tenant;
+                                            existingUser._doc.company = org.id;
+                                            existingUser.companyName = org.companyName;
+                                            existingUser._doc.multi_login = account.multi_login;
+                                            existingUser._doc.user_meta = account.user_meta;
+                                            existingUser._doc.app_meta = account.app_meta;
+                                            existingUser._doc.user_scopes = account.user_scopes;
+                                            existingUser._doc.client_scopes = account.client_scopes;
+                                            existingUser._doc.resourceid = account.resource_id;
+                                            existingUser._doc.veeryaccount = account.veeryaccount;
+                                            existingUser._doc.multi_login = account.multi_login;
+
+                                            GetJWT(existingUser, claims_arr, req.body.clientId, 'oauth-facebook', req, function (err, isSuccess, token) {
+
+                                                if (token) {
+                                                    return res.send({state: "existing", token: token});
+                                                } else {
+                                                    return res.status(401).send({message: 'Invalid email and/or password'});
+                                                }
+                                            });
+                                        });
                                     }
                                 });
 
-                            }else {
+                            } else {
                                 user.facebook = {
                                     contact: profile.email,
                                     cid: profile.id,
@@ -2318,11 +3013,11 @@ module.exports.Facebook = function(req, res) {
                                     //var token = GetJWT(user, claims_arr);
                                     //res.send({state: "linking", token: token});
 
-                                    GetJWT(user,claims_arr,req.body.clientId,'oauth-facebook',req, function(err, isSuccess, token){
+                                    GetJWT(user, claims_arr, req.body.clientId, 'oauth-facebook', req, function (err, isSuccess, token) {
 
-                                        if(token){
+                                        if (token) {
                                             return res.send({state: "linking", token: token});
-                                        }else{
+                                        } else {
                                             return res.status(401).send({message: 'Invalid email and/or password'});
                                         }
                                     });
