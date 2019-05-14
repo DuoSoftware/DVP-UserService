@@ -14,6 +14,7 @@ var redis = require('ioredis');
 var bcrypt = require('bcryptjs');
 var DbConn = require('dvp-dbmodels');
 var UserAccount = require('dvp-mongomodels/model/UserAccount');
+var auditTrailsHandler = require('dvp-common/AuditTrail/AuditTrailsHandler.js');
 
 
 var redisip = config.Redis.ip;
@@ -22,6 +23,35 @@ var redispass = config.Redis.password;
 var redismode = config.Redis.mode;
 var redisdb = config.Redis.db;
 
+function addAuditTrail(tenantId, companyId, iss, auditData) {
+    /*var auditData =  {
+     KeyProperty: keyProperty,
+     OldValue: auditTrails.OldValue,
+     NewValue: auditTrails.NewValue,
+     Description: auditTrails.Description,
+     Author: auditTrails.Author,
+     User: iss,
+     OtherData: auditTrails.OtherData,
+     ObjectType: auditTrails.ObjectType,
+     Action: auditTrails.Action,
+     Application: auditTrails.Application,
+     TenantId: tenantId,
+     CompanyId: companyId
+     }*/
+
+    try {
+        auditTrailsHandler.CreateAuditTrails(tenantId, companyId, iss, auditData, function (err, obj) {
+            if (err) {
+                var jsonString = messageFormatter.FormatMessage(err, "Fail", false, auditData);
+                logger.error('addAuditTrail -  Fail To Save Audit trail-[%s]', jsonString);
+            }
+        });
+    }
+    catch (ex) {
+        var jsonString = messageFormatter.FormatMessage(ex, "Fail", false, auditData);
+        logger.error('addAuditTrail -  insertion  failed-[%s]', jsonString);
+    }
+}
 
 var redisSetting = {
     port: redisport,
@@ -284,20 +314,24 @@ function GetUser(req, res) {
             } else {
 
                 //var users = userAccounts.map(function (userAccount) {
-                var user = userAccount.userref.toObject();
+                var user = {};
+                if(userAccount && userAccount.userref) {
 
-                user.group = userAccount.group;
-                user.Active = userAccount.active;
-                user.joined = userAccount.joined;
-                user.resourceid = userAccount.resource_id;
-                user.veeryaccount = userAccount.veeryaccount;
-                user.multi_login = userAccount.multi_login;
-                user.allowoutbound = userAccount.allowoutbound;
-                user.allowed_file_categories = userAccount.allowed_file_categories;
-                user.user_meta = userAccount.user_meta;
-                user.app_meta = userAccount.app_meta;
-                user.user_scopes = userAccount.user_scopes;
-                user.client_scopes = userAccount.client_scopes;
+                    user = userAccount.userref.toObject();
+
+                    user.group = userAccount.group;
+                    user.Active = userAccount.active;
+                    user.joined = userAccount.joined;
+                    user.resourceid = userAccount.resource_id;
+                    user.veeryaccount = userAccount.veeryaccount;
+                    user.multi_login = userAccount.multi_login;
+                    user.allowoutbound = userAccount.allowoutbound;
+                    user.allowed_file_categories = userAccount.allowed_file_categories;
+                    user.user_meta = userAccount.user_meta;
+                    user.app_meta = userAccount.app_meta;
+                    user.user_scopes = userAccount.user_scopes;
+                    user.client_scopes = userAccount.client_scopes;
+                }
 
 
                 //});
@@ -520,8 +554,133 @@ function GetUsersByRoles(req, res) {
 }
 
 ///UserInvitable
+///copied//////////////////
+function arr_diff (a1, a2) {
 
+    var a = [], diff = [];
+
+    for (var i = 0; i < a1.length; i++) {
+        a[a1[i]] = true;
+    }
+
+    for (var i = 0; i < a2.length; i++) {
+        if (a[a2[i]]) {
+            delete a[a2[i]];
+        } else {
+            a[a2[i]] = true;
+        }
+    }
+
+    for (var k in a) {
+        diff.push(k);
+    }
+
+    return diff;
+}
+//array intersection
+//array1.filter(value => -1 !== array2.indexOf(value))
 function UserInvitable(req, res) {
+
+
+    logger.debug("DVP-UserService.UserInvitable Internal method ");
+
+    var company = parseInt(req.user.company);
+    var tenant = parseInt(req.user.tenant);
+    var jsonString;
+    var userNames  = req.params.name || req.query.name;
+
+    if(!Array.isArray(userNames)){
+        userNames = [userNames];
+    }
+
+    User.find({
+        username: {$in : userNames}
+        //req.params.name
+        //company: company,
+        //tenant: tenant
+    }).exec(function (err, users) {
+        if (err) {
+
+            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+            res.end(jsonString);
+
+        } else {
+
+            if (users) {
+                //jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
+                var accountNames = users.map(function(item){
+                    return item.username;
+                });
+
+                var commonUsers = userNames.filter(function(value){
+                    return -1 !== accountNames.indexOf(value);
+                });
+
+                var unavailableUsers = arr_diff(userNames, accountNames);
+
+                UserAccount.find({
+                    user: {
+                        $in: accountNames
+                    },
+                    company: company,
+                    tenant: tenant
+                }).populate('userref', '-password').exec(function (err, userAccounts) {
+
+                    if (err) {
+                        jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed, Not available for invitation", false, undefined);
+                    } else {
+                        if (userAccounts) {
+
+                            var availableAccounts = userAccounts.map(function(item){
+                                return item.user;
+                            });
+
+                            var unavailableAccounts = arr_diff(commonUsers, availableAccounts);
+
+                            var commonAccounts = commonUsers.filter(function(value){
+                                return -1 !== availableAccounts.indexOf(value);
+                            });
+
+                            jsonString = messageFormatter.FormatMessage(err, "Get User Account Successful, Not available for invitation", true, {
+                                requestUsers: userNames,
+                                unavailableAccounts: unavailableAccounts,
+                                unavailableUsers : unavailableUsers,
+                                commonUsers: commonAccounts
+                            });
+
+                        } else {
+
+                            unavailableAccounts = commonUsers;
+                            jsonString = messageFormatter.FormatMessage(err, "No user Account found, Available for Invitation", true, {
+                                requestUsers: userNames,
+                                unavailableAccounts: unavailableAccounts,
+                                unavailableUsers : unavailableUsers,
+                                commonUsers: []
+                            });
+                        }
+                    }
+                    res.end(jsonString);
+                });
+
+            } else {
+
+                var unavailableUsers = userNames;
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", true, {
+                    requestUsers: userNames,
+                    unavailableAccounts: [],
+                    unavailableUsers : userNames,
+                    commonUsers: []
+                });
+                res.end(jsonString);
+
+            }
+        }
+    });
+
+}
+
+
+function UserInvitable_back(req, res) {
 
 
     logger.debug("DVP-UserService.UserInvitable Internal method ");
@@ -902,6 +1061,20 @@ function CreateUser(req, res) {
                                                                     res.end(jsonString);
                                                                 } else {
 
+                                                                    var auditData = {
+                                                                        KeyProperty: "UserName",
+                                                                        OldValue: {},
+                                                                        NewValue: user,
+                                                                        Description: "New User Created.",
+                                                                        Author: req.user.iss,
+                                                                        User: req.user.iss,
+                                                                        ObjectType: "User",
+                                                                        Action: "SAVE",
+                                                                        Application: "User Service"
+                                                                    };
+                                                                    addAuditTrail(tenant, company, req.user.iss, auditData);
+
+
                                                                     limitObj.currentAccess.push(user.username);
                                                                     Org.findOneAndUpdate({
                                                                         id: company,
@@ -1238,6 +1411,23 @@ function ReActivateUser(req, res) {
 
 
                                                     if (updatedUser) {
+
+
+                                                        var auditData = {
+                                                            KeyProperty: "UserName",
+                                                            OldValue: userAccount,
+                                                            NewValue: updatedUser,
+                                                            Description: "User Updater",
+                                                            Author: req.user.iss,
+                                                            User: req.user.iss,
+                                                            ObjectType: "User",
+                                                            Action: "UPDATE",
+                                                            Application: "User Service"
+                                                        };
+                                                        addAuditTrail(tenant, company, req.user.iss, auditData);
+
+
+
                                                         limitObj.currentAccess.push(updatedUser.user);
                                                         Org.findOneAndUpdate({
                                                             id: company,
@@ -1407,6 +1597,20 @@ function UpdateUser(req, res) {
                                 user.allowed_file_categories = userAccount.allowed_file_categories;
 
                                 jsonString = messageFormatter.FormatMessage(err, "Update User Account Successful", true, user);
+
+                                var auditData = {
+                                    KeyProperty: "UserName",
+                                    OldValue: {},
+                                    NewValue: userAccount,
+                                    Description: "User Updater",
+                                    Author: req.user.iss,
+                                    User: req.user.iss,
+                                    ObjectType: "User",
+                                    Action: "UPDATE",
+                                    Application: "User Service"
+                                };
+                                addAuditTrail(tenant, company, req.user.iss, auditData);
+
                             }
                             else {
                                 jsonString = messageFormatter.FormatMessage(err, "Update User Account Failed", false, undefined);
@@ -2845,6 +3049,20 @@ function AddUserScopes(req, res) {
                                     if (err) {
                                         jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
                                     } else {
+
+                                        var auditData = {
+                                            KeyProperty: "UserName",
+                                            OldValue: {},
+                                            NewValue: rUsers,
+                                            Description: "User Updater",
+                                            Author: req.user.iss,
+                                            User: req.user.iss,
+                                            ObjectType: "User",
+                                            Action: "UPDATE",
+                                            Application: "User Service"
+                                        };
+                                        addAuditTrail(tenant, company, req.user.iss, auditData);
+
                                         jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", true, undefined);
                                     }
                                     res.end(jsonString);
@@ -2886,6 +3104,18 @@ function RemoveUserScopes(req, res) {
 
         } else {
 
+            var auditData = {
+                KeyProperty: "UserName",
+                OldValue: {},
+                NewValue: users,
+                Description: "User Updater",
+                Author: req.user.iss,
+                User: req.user.iss,
+                ObjectType: "User",
+                Action: "UPDATE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
             jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
 
         }
@@ -2997,6 +3227,20 @@ function AddUserAppScopes(req, res) {
                                                     if (err) {
                                                         jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
                                                     } else {
+
+                                                        var auditData = {
+                                                            KeyProperty: "UserName",
+                                                            OldValue: adminUser,
+                                                            NewValue: rUser,
+                                                            Description: "User Updater",
+                                                            Author: req.user.iss,
+                                                            User: req.user.iss,
+                                                            ObjectType: "User",
+                                                            Action: "UPDATE",
+                                                            Application: "User Service"
+                                                        };
+                                                        addAuditTrail(tenant, company, req.user.iss, auditData);
+
                                                         jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", true, undefined);
                                                         //consoleAccessLimitObj.currentAccess.push(assignUser.username);
                                                         //consoleAccessLimitObj.currentAccess = UniqueArray(consoleAccessLimitObj.currentAccess);
@@ -3183,6 +3427,21 @@ function UpdateUserMetadata(req, res) {
 
         } else {
 
+
+            var auditData = {
+                KeyProperty: "UserName",
+                OldValue: {},
+                NewValue: users,
+                Description: "User Updater",
+                Author: req.user.iss,
+                User: req.user.iss,
+                ObjectType: "User",
+                Action: "UPDATE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
+
+
             jsonString = messageFormatter.FormatMessage(err, "Update user meta Successful", true, undefined);
 
         }
@@ -3214,6 +3473,19 @@ function UpdateAppMetadata(req, res) {
 
         } else {
 
+            var auditData = {
+                KeyProperty: "UserName",
+                OldValue: {},
+                NewValue: users,
+                Description: "User Updater",
+                Author: req.user.iss,
+                User: req.user.iss,
+                ObjectType: "User",
+                Action: "UPDATE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
+
             jsonString = messageFormatter.FormatMessage(err, "Update app meta Successful", true, undefined);
 
         }
@@ -3243,6 +3515,19 @@ function RemoveUserMetadata(req, res) {
 
 
         } else {
+
+            var auditData = {
+                KeyProperty: "UserName",
+                OldValue: {},
+                NewValue: users,
+                Description: "User Updater",
+                Author: req.user.iss,
+                User: req.user.iss,
+                ObjectType: "User",
+                Action: "UPDATE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
 
             jsonString = messageFormatter.FormatMessage(undefined, "Remove user meta successfully", false, undefined);
 
@@ -3274,6 +3559,19 @@ function RemoveAppMetadata(req, res) {
 
 
         } else {
+
+            var auditData = {
+                KeyProperty: "UserName",
+                OldValue: {},
+                NewValue: users,
+                Description: "User Updater",
+                Author: req.user.iss,
+                User: req.user.iss,
+                ObjectType: "User",
+                Action: "UPDATE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
 
             jsonString = messageFormatter.FormatMessage(undefined, "Update app meta successfully", false, undefined);
 
@@ -3626,6 +3924,20 @@ function UpdateMyAppMetadata(req, res) {
                             jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
 
                         } else {
+
+                            var auditData = {
+                                KeyProperty: "UserName",
+                                OldValue: users,
+                                NewValue: user,
+                                Description: "User Updater",
+                                Author: req.user.iss,
+                                User: req.user.iss,
+                                ObjectType: "User",
+                                Action: "UPDATE",
+                                Application: "User Service"
+                            };
+                            addAuditTrail(tenant, company, req.user.iss, auditData);
+
                             jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, users.app_meta);
                         }
                         res.end(jsonString);
@@ -4408,7 +4720,6 @@ function userIsAllowToOutbound(req, res) {
 
 }
 
-
 function UserAcccountActivation(req, res) {
 
 
@@ -4435,6 +4746,19 @@ function UserAcccountActivation(req, res) {
                 res.end(jsonString);
 
             } else {
+
+                var auditData = {
+                    KeyProperty: "UserName",
+                    OldValue: {},
+                    NewValue: rUser,
+                    Description: "User Updater",
+                    Author: req.user.iss,
+                    User: req.user.iss,
+                    ObjectType: "User",
+                    Action: "UPDATE",
+                    Application: "User Service"
+                };
+                addAuditTrail(tenant, company, req.user.iss, auditData);
 
                 jsonString = messageFormatter.FormatMessage(undefined, "Update User Account Activation succeeded", true, invitation);
                 res.end(jsonString);
@@ -4492,6 +4816,20 @@ function UpdateUsersVeeryAccountDomain(req, res) {
                     }
 
                 });
+
+                var auditData = {
+                    KeyProperty: "UserName",
+                    OldValue: {},
+                    NewValue: users,
+                    Description: "User Updater",
+                    Author: req.user.iss,
+                    User: req.user.iss,
+                    ObjectType: "User",
+                    Action: "UPDATE",
+                    Application: "User Service"
+                };
+                addAuditTrail(tenant, company, req.user.iss, auditData);
+
                 jsonString = messageFormatter.FormatMessage(undefined, "opration Started....", true, undefined);
                 res.end(jsonString);
             } else {
@@ -4505,7 +4843,6 @@ function UpdateUsersVeeryAccountDomain(req, res) {
     });
 
 }
-
 
 function GetUsersCountByRole(req, res) {
 

@@ -66,7 +66,7 @@ function GetInvitation(req, res) {
 
         } else {
 
-            if (usergroups) {
+            if (invitations) {
 
 
                 jsonString = messageFormatter.FormatMessage(err, "Get invitation Successful", true, invitations);
@@ -204,7 +204,7 @@ function CreateInvitation(req, res) {
                                     var invitation = UserInvitation({
                                         to: to,
                                         from: from,
-
+                                        role: role,
                                         status: 'pending',
                                         company: company,
                                         tenant: tenant,
@@ -268,6 +268,7 @@ function CreateInvitation(req, res) {
                                     });
                                 } else {
 
+                                    /////////////save invitation and send an email/////////////////////////////////////////
                                     jsonString = messageFormatter.FormatMessage(new Error("No user found"), "User Invitation failed due to no user found", true, undefined);
                                     res.end(jsonString);
                                 }
@@ -275,6 +276,295 @@ function CreateInvitation(req, res) {
 
                         });
                     } else {
+                        jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
+                        res.end(jsonString);
+                    }
+                } else {
+                    jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
+                    res.end(jsonString);
+                }
+
+            } else {
+                jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
+                res.end(jsonString);
+            }
+        }
+    });
+}
+
+function CreateInvitations(req, res) {
+
+    logger.debug("DVP-UserService.GetMyFromInvitations Internal method ");
+    var jsonString;
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+    var from = req.user.iss;
+    var to = [];
+    var message = "";
+    var role = "agent";
+    if (req.body && req.body.message) {
+        message = req.body.message;
+    }
+
+    if (req.body && req.body.role) {
+        role = req.body.role;
+    }
+
+    if (req.body && req.body.to && Array.isArray(req.body.to)) {
+
+        to = req.body.to;
+    }
+
+    Org.findOne({tenant: tenant, id: company}, function (err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+            res.end(jsonString);
+        } else {
+            if (org) {
+
+                var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", role);
+                if (limitObj) {
+                    if (limitObj.accessLimit - limitObj.currentAccess.length > to.length) {
+                        User.find({
+                            username: {$in : to}
+                        }, function (err, users) {
+
+                            if (err) {
+
+                                jsonString = messageFormatter.FormatMessage(err, "User Invitation failed due to no user found", true, undefined);
+                                res.end(jsonString);
+
+                            } else {
+
+                                if (users && Array.isArray(users) ) {
+
+                                    //user.allow_invitation === true
+
+                                    var invites = users.reduce(function (total, val, index) {
+
+                                        if(val && val.allow_invitation === true) {
+                                            var invitation = UserInvitation({
+                                                to: val.username,
+                                                from: from,
+                                                role: role,
+                                                status: 'pending',
+                                                company: company,
+                                                tenant: tenant,
+                                                created_at: Date.now(),
+                                                updated_at: Date.now(),
+                                                message: message,
+                                            });
+
+                                            total.push(invitation);
+                                        }
+
+                                      return total;
+
+                                    }, []);
+
+                                    var userAccounts = users.reduce(function (total, val, index) {
+
+                                        if(val && val.allow_invitation === true) {
+                                            var userAccount = UserAccount({
+                                                active: true,
+                                                verified: false,
+                                                userref: val._id,
+                                                user_meta: {role: role},
+                                                user: to,
+                                                tenant: tenant,
+                                                company: company,
+                                                created_at: Date.now(),
+                                                updated_at: Date.now(),
+                                                multi_login: false
+                                            });
+
+                                            total.push(userAccount);
+                                        }
+
+                                        return total;
+
+                                    }, []);
+
+
+                                    // var invitation = UserInvitation({
+                                    //     to: to,
+                                    //     from: from,
+                                    //
+                                    //     status: 'pending',
+                                    //     company: company,
+                                    //     tenant: tenant,
+                                    //     created_at: Date.now(),
+                                    //     updated_at: Date.now(),
+                                    //     message: message,
+                                    // });
+
+                                    UserInvitation.insertMany(invites, function (err, invitations) {
+
+                                        if (err) {
+                                            jsonString = messageFormatter.FormatMessage(err, "User Invitation save failed", false, undefined);
+                                            res.end(jsonString);
+                                        } else {
+
+                                            UserAccount.insertMany(userAccounts,function (err, accounts) {
+                                                if (err) {
+                                                    jsonString = messageFormatter.FormatMessage(new Error("Account creation failed"), "User Invitation failed due to no user found", true, undefined);
+                                                    res.end(jsonString);
+                                                } else {
+
+
+                                                    accounts.forEach(function(item){
+                                                        var sendObj = {
+                                                            "company": 0,
+                                                            "tenant": 1
+                                                        };
+
+                                                        sendObj.to = item.user;
+                                                        sendObj.from = "no-reply";
+                                                        sendObj.template = "By-User Invitation received";
+                                                        sendObj.Parameters = {
+                                                            message: message,
+                                                            username:  item.user,
+                                                            owner: from,
+                                                            created_at: new Date()
+                                                        };
+
+                                                        PublishToQueue("EMAILOUT", sendObj);
+
+                                                        SenNotification(company, tenant, from, item.user, message, function () {
+
+                                                        });
+                                                    });
+
+                                                    jsonString = messageFormatter.FormatMessage(undefined, "User Invitation saved successfully", true, invitations);
+                                                    res.end(jsonString);
+                                                }
+                                            });
+                                        }
+                                    });
+                                } else {
+
+                                    /////////////save invitation and send an email/////////////////////////////////////////
+                                    jsonString = messageFormatter.FormatMessage(new Error("No user found"), "User Invitation failed due to no user found", true, undefined);
+                                    res.end(jsonString);
+                                }
+                            }
+
+                        });
+                    } else {
+                        jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
+                        res.end(jsonString);
+                    }
+                } else {
+                    jsonString = messageFormatter.FormatMessage(err, "Invalid User Role", false, undefined);
+                    res.end(jsonString);
+                }
+
+            } else {
+                jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
+                res.end(jsonString);
+            }
+        }
+    });
+}
+
+function RequestInvitations(req, res) {
+
+    logger.debug("DVP-UserService.GetMyFromInvitations Internal method ");
+    var jsonString;
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+    var from = req.user.iss;
+    var to = [];
+    var message = "";
+    var role = "agent";
+    if (req.body && req.body.message) {
+        message = req.body.message;
+    }
+
+    if (req.body && req.body.role) {
+        role = req.body.role;
+    }
+
+    if (req.body && req.body.to && Array.isArray(req.body.to)) {
+
+        to = req.body.to;
+    }
+
+    Org.findOne({tenant: tenant, id: company}, function (err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+            res.end(jsonString);
+        } else {
+            if (org) {
+
+                var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", role);
+                if (limitObj) {
+                    if (limitObj.accessLimit - limitObj.currentAccess.length > to.length) {
+
+
+                        var invites = to.reduce(function (total, val, index) {
+
+
+                            var invitation = UserInvitation({
+                                to: val,
+                                from: from,
+                                status: 'pending',
+                                role: role,
+                                company: company,
+                                tenant: tenant,
+                                created_at: Date.now(),
+                                updated_at: Date.now(),
+                                message: message,
+                            });
+
+                            total.push(invitation);
+
+
+                            return total;
+
+                        }, []);
+
+
+                        UserInvitation.insertMany(invites, function (err, invitations) {
+
+                            if (err) {
+                                jsonString = messageFormatter.FormatMessage(err, "User Invitation save failed", false, undefined);
+                                res.end(jsonString);
+                            } else {
+
+
+                                invitations.forEach(function (item) {
+                                    var sendObj = {
+                                        "company": 0,
+                                        "tenant": 1
+                                    };
+
+                                    sendObj.to = item.to;
+                                    sendObj.from = "no-reply";
+                                    sendObj.template = "By-User Invitation url";
+                                    sendObj.Parameters = {
+                                        message: message,
+                                        username: item.to,
+                                        owner: from,
+                                        role: role,
+                                        company:org.companyName,
+                                        invitation: item._id,
+                                        url : config.auth.ui_host + '#/invitationSignUp?role='+role+'&invitation='
+                                        +item._id+'&company='+org.companyName,
+                                        created_at: new Date()
+                                    };
+
+                                    PublishToQueue("EMAILOUT", sendObj);
+
+
+                                });
+
+                                jsonString = messageFormatter.FormatMessage(undefined, "User Invitation saved successfully", true, invitations);
+                                res.end(jsonString);
+                            }
+                        });
+                    }
+                    else {
                         jsonString = messageFormatter.FormatMessage(err, "User Limit Exceeded", false, undefined);
                         res.end(jsonString);
                     }
@@ -532,7 +822,8 @@ var SenNotification = function (company, tenant, from, to, message, callback) {
         Message: message,
         Direction: "STATELESS",
         CallbackURL: "",
-        Ref: ""
+        Ref: "",
+        isPersist : true
     };
 
 
@@ -574,6 +865,8 @@ module.exports.RejectUserInvitation = RejectUserInvitation;
 module.exports.CancelUserInvitation = CancelUserInvitation;
 module.exports.GetInvitation = GetInvitation;
 module.exports.ResendUserInvitation = ResendUserInvitation;
+module.exports.CreateInvitations = CreateInvitations;
+module.exports.RequestInvitations = RequestInvitations;
 
 
 

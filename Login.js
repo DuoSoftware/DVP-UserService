@@ -114,6 +114,19 @@ redisClient.on('error', function (err) {
     console.log('Error '.red, err);
 });
 
+
+function FilterObjFromArray(itemArray, field, value) {
+    var resultObj;
+    for (var i in itemArray) {
+        var item = itemArray[i];
+        if (item[field] == value) {
+            resultObj = item;
+            break;
+        }
+    }
+    return resultObj;
+}
+
 function GetVerification(token, done) {
 
     var payload = jwt.decode(token);
@@ -1572,6 +1585,495 @@ module.exports.SignUP = function(req, res) {
 
 };
 
+module.exports.SignUPInvitation = function(req, res) {
+
+    logger.info("config.auth.signup_verification  -------->" +  config.auth.signup_verification);
+    if(config.auth.signup_verification == true || config.auth.signup_verification == 'true') {
+
+        if(!req.body || req.body['g-recaptcha-response'] === undefined || req.body['g-recaptcha-response'] === '' || req.body['g-recaptcha-response'] === null) {
+            return res.status(409).send({message: 'Please select captcha'});
+        }
+
+
+        var secretKey = config.auth.recaptcha_key;
+        //"6LezaAsUAAAAAFbtiyMzOlMmqEwzMwmMYszmO_Ve";
+        var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + req.body['g-recaptcha-response'] + "&remoteip=" + req.connection.remoteAddress;
+
+        request(verificationUrl, function (error, response, body) {
+            body = JSON.parse(body);
+            if (body.success !== undefined && !body.success) {
+
+                return res.status(409).send({message: 'Failed captcha verification'});
+            }
+
+            UserInvitation.findOne({
+                _id: req.body.invitation
+            }, function (err, invitation) {
+                if (err || !invitation) {
+
+                    return res.status(404).send({message: 'User Invitation Not Found'});
+                } else {
+
+                    var company = invitation.company;
+                    var tenant = invitation.tenant;
+                    var role =req.body.role;
+                    var from = invitation.from;
+                    var to = invitation.to;
+
+
+                    Org.findOne({ tenant: tenant, id: company }, function (err, org) {
+                        if (err) {
+
+                            return res.status(404).send({message: 'Organization Not Found'});
+                        } else {
+                            if (org) {
+                                /*
+                                 to: val.username,
+                                                from: from,
+                                                status: 'pending',
+                                                company: company,
+                                                tenant: tenant,
+                                                created_at: Date.now(),
+                                                updated_at: Date.now(),
+                                                message: message,
+
+                                 */
+
+                                if (role && to) {
+                                    var userRole = role.toLowerCase();
+                                    var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
+                                    if (limitObj) {
+                                        if (limitObj.accessLimit > limitObj.currentAccess.length) {
+
+                                            User.findOne({"username": to}, function (err, existingUser) {
+
+                                                if (err) {
+
+                                                    return res.status(409).send({message: 'User validation failed'});
+
+                                                } else {
+
+
+                                                    if (existingUser) {
+                                                        return res.status(409).send({message: 'Email is already taken'});
+                                                    }
+                                                    var user = new User({
+                                                        displayName: req.body.displayName,
+                                                        email: {
+                                                            contact: to,
+                                                            type: "email",
+                                                            display: to,
+                                                            verified: false
+                                                        },
+                                                        username: to,
+                                                        password: req.body.password,
+                                                        //user_meta: {role: "admin"},
+                                                        systemuser: true,
+                                                        //companyname: req.body.companyname,
+                                                        // user_scopes: [
+                                                        //     {scope: "organisation", read: true, write: true},
+                                                        //     {scope: "resource", read: true},
+                                                        //     {scope: "package", read: true},
+                                                        //     {scope: "console", read: true},
+                                                        //     {"scope": "myNavigation", "read": true},
+                                                        //     {"scope": "myUserProfile", "read": true}
+                                                        // ],
+                                                        verified: false,
+                                                        Active: true,
+                                                        company: 0,
+                                                        tenant: 1,
+                                                        created_at: Date.now(),
+                                                        updated_at: Date.now()
+
+                                                    });
+
+
+                                                    if (req.body.veeryaccount) {
+                                                        user.veeryaccount = req.body.veeryaccount;
+                                                    }
+
+                                                    if (config.auth.login_verification) {
+
+                                                        user.verified = false;
+
+                                                    } else {
+
+                                                        user.verified = true;
+                                                    }
+
+
+                                                    user.save(function (err, result) {
+                                                        if (!err && result) {
+
+
+                                                            var userAccount = UserAccount({
+                                                                active: true,
+                                                                verified: true,
+                                                                joined: Date.now(),
+                                                                user: user.username,
+                                                                userref: user._id,
+                                                                tenant: org.tenant,
+                                                                company: org.id,
+                                                                user_meta: { role: userRole },
+                                                                app_meta: {},
+                                                                created_at: Date.now(),
+                                                                updated_at: Date.now(),
+                                                                multi_login: false
+                                                            });
+
+                                                            userAccount.save(function (err, account) {
+                                                                if (err) {
+                                                                    user.remove(function (err) {
+                                                                    });
+                                                                    return res.status(400).send({message: 'Accountr Creation failed'});
+                                                                } else {
+
+                                                                    limitObj.currentAccess.push(user.username);
+                                                                    Org.findOneAndUpdate({
+                                                                        id: company,
+                                                                        tenant: tenant
+                                                                    }, org, function (err, rOrg) {
+                                                                        if (err) {
+                                                                            user.remove(function (err) {
+                                                                            });
+                                                                            return res.status(400).send({message: 'Limit Update failed'});
+                                                                        } else {
+
+                                                                            UserInvitation.findOneAndUpdate({
+                                                                                _id: req.body.invitation,
+                                                                                company: company,
+                                                                                tenant: tenant,
+                                                                                to: to,
+                                                                                status: "pending"
+                                                                            }, {status: "accepted", update_at: Date.now()}, function (err, invitation) {
+
+                                                                                if (config.auth.login_verification) {
+
+                                                                                    crypto.randomBytes(20, function (err, buf) {
+                                                                                        var token = buf.toString('hex');
+
+                                                                                        var url = config.auth.ui_host + '#/activate/' + token;
+
+                                                                                        if (userRole == "agent") {
+
+                                                                                            url = config.auth.agent_host + '#/activate/' + token;
+                                                                                        }
+
+                                                                                        redisClient.set("activate" + ":" + token, user._id, function (err, val) {
+                                                                                            if (err) {
+
+                                                                                                jsonString = messageFormatter.FormatMessage(err, "Create activation token failed", false, user);
+                                                                                                res.end(jsonString);
+
+                                                                                            } else {
+
+
+                                                                                                redisClient.expireat("activate" + ":" + token, parseInt((+new Date) / 1000) + 86400);
+
+                                                                                                var sendObj = {
+                                                                                                    "company": config.Tenant.activeCompany,
+                                                                                                    "tenant": config.Tenant.activeTenant
+                                                                                                };
+
+                                                                                                sendObj.to = req.body.mail;
+                                                                                                sendObj.from = "no-reply";
+                                                                                                sendObj.template = "By-User Registration Confirmation";
+                                                                                                sendObj.Parameters = {
+                                                                                                    username: user.username,
+                                                                                                    created_at: new Date(),
+                                                                                                    url: url
+                                                                                                }
+
+                                                                                                PublishToQueue("EMAILOUT", sendObj)
+
+                                                                                                jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                                                                res.end(jsonString);
+                                                                                            }
+                                                                                        });
+
+                                                                                    });
+                                                                                } else {
+
+                                                                                    jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                                                    res.end(jsonString);
+                                                                                }
+                                                                            });
+
+                                                                        }
+
+                                                                    });
+
+                                                                }
+                                                            });
+
+                                                        } else {
+                                                            res.status(404).send({message: 'User save failed'});
+
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+                                        else{
+                                            return res.status(401).send({message: 'Limit has exceeded'});
+                                        }
+                                    }else{
+                                        return res.status(401).send({message: 'Limit Not Found'});
+                                    }
+                                }
+                                else{
+                                    return res.status(404).send({message: 'Role Not Found'});
+                                }
+                            }
+                            else{
+                                return res.status(404).send({message: 'Organization Not Found'});
+                            }
+                        }
+                    });
+                }
+            });
+        });
+    }else {
+
+
+        UserInvitation.findOne({
+            _id: req.body.invitation
+        }, function (err, invitation) {
+            if (err || !invitation) {
+
+                return res.status(404).send({message: 'User Invitation Not Found'});
+            } else {
+
+                var company = invitation.company;
+                var tenant = invitation.tenant;
+                var role = req.body.role;
+                var from = invitation.from;
+                var to = invitation.to;
+
+
+                Org.findOne({tenant: tenant, id: company}, function (err, org) {
+                    if (err) {
+
+                        return res.status(404).send({message: 'Organization Not Found'});
+                    } else {
+                        if (org) {
+                            /*
+                             to: val.username,
+                                            from: from,
+                                            status: 'pending',
+                                            company: company,
+                                            tenant: tenant,
+                                            created_at: Date.now(),
+                                            updated_at: Date.now(),
+                                            message: message,
+
+                             */
+
+                            if (role && to) {
+                                var userRole = role.toLowerCase();
+                                var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
+                                if (limitObj) {
+                                    if (limitObj.accessLimit > limitObj.currentAccess.length) {
+
+                                        User.findOne({"username": to}, function (err, existingUser) {
+
+                                            if (err) {
+
+                                                return res.status(409).send({message: 'User validation failed'});
+
+                                            } else {
+
+
+                                                if (existingUser) {
+                                                    return res.status(409).send({message: 'Email is already taken'});
+                                                }
+                                                var user = new User({
+                                                    displayName: req.body.displayName,
+                                                    email: {
+                                                        contact: to,
+                                                        type: "email",
+                                                        display: to,
+                                                        verified: false
+                                                    },
+                                                    username: to,
+                                                    password: req.body.password,
+                                                    //user_meta: {role: "admin"},
+                                                    systemuser: true,
+                                                    //companyname: req.body.companyname,
+                                                    // user_scopes: [
+                                                    //     {scope: "organisation", read: true, write: true},
+                                                    //     {scope: "resource", read: true},
+                                                    //     {scope: "package", read: true},
+                                                    //     {scope: "console", read: true},
+                                                    //     {"scope": "myNavigation", "read": true},
+                                                    //     {"scope": "myUserProfile", "read": true}
+                                                    // ],
+                                                    verified: false,
+                                                    Active: true,
+                                                    company: 0,
+                                                    tenant: 1,
+                                                    created_at: Date.now(),
+                                                    updated_at: Date.now()
+
+                                                });
+
+
+                                                if (req.body.veeryaccount) {
+                                                    user.veeryaccount = req.body.veeryaccount;
+                                                }
+
+                                                if (config.auth.login_verification) {
+
+                                                    user.verified = false;
+
+                                                } else {
+
+                                                    user.verified = true;
+                                                }
+
+
+                                                user.save(function (err, result) {
+                                                    if (!err && result) {
+
+
+                                                        var userAccount = UserAccount({
+                                                            active: true,
+                                                            verified: true,
+                                                            joined: Date.now(),
+                                                            user: user.username,
+                                                            userref: user._id,
+                                                            tenant: org.tenant,
+                                                            company: org.id,
+                                                            user_meta: {role: userRole},
+                                                            app_meta: {},
+                                                            created_at: Date.now(),
+                                                            updated_at: Date.now(),
+                                                            multi_login: false
+                                                        });
+
+                                                        userAccount.save(function (err, account) {
+                                                            if (err) {
+                                                                user.remove(function (err) {
+                                                                });
+                                                                return res.status(400).send({message: 'Accountr Creation failed'});
+                                                            } else {
+
+                                                                limitObj.currentAccess.push(user.username);
+                                                                Org.findOneAndUpdate({
+                                                                    id: company,
+                                                                    tenant: tenant
+                                                                }, org, function (err, rOrg) {
+                                                                    if (err) {
+                                                                        user.remove(function (err) {
+                                                                        });
+                                                                        return res.status(400).send({message: 'Limit Update failed'});
+                                                                    } else {
+
+                                                                        UserInvitation.findOneAndUpdate({
+                                                                            _id: req.body.invitation,
+                                                                            company: company,
+                                                                            tenant: tenant,
+                                                                            to: to,
+                                                                            status: "pending"
+                                                                        }, {
+                                                                            status: "accepted",
+                                                                            update_at: Date.now()
+                                                                        }, function (err, invitation) {
+
+                                                                            if (config.auth.login_verification) {
+
+                                                                                crypto.randomBytes(20, function (err, buf) {
+                                                                                    var token = buf.toString('hex');
+
+                                                                                    var url = config.auth.ui_host + '#/activate/' + token;
+
+                                                                                    if (userRole == "agent") {
+
+                                                                                        url = config.auth.agent_host + '#/activate/' + token;
+                                                                                    }
+
+                                                                                    redisClient.set("activate" + ":" + token, user._id, function (err, val) {
+                                                                                        if (err) {
+
+                                                                                            jsonString = messageFormatter.FormatMessage(err, "Create activation token failed", false, user);
+                                                                                            res.end(jsonString);
+
+                                                                                        } else {
+
+
+                                                                                            redisClient.expireat("activate" + ":" + token, parseInt((+new Date) / 1000) + 86400);
+
+                                                                                            var sendObj = {
+                                                                                                "company": config.Tenant.activeCompany,
+                                                                                                "tenant": config.Tenant.activeTenant
+                                                                                            };
+
+                                                                                            sendObj.to = req.body.mail;
+                                                                                            sendObj.from = "no-reply";
+                                                                                            sendObj.template = "By-User Registration Confirmation";
+                                                                                            sendObj.Parameters = {
+                                                                                                username: user.username,
+                                                                                                created_at: new Date(),
+                                                                                                url: url
+                                                                                            }
+
+                                                                                            PublishToQueue("EMAILOUT", sendObj)
+
+                                                                                            jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                                                            res.end(jsonString);
+                                                                                        }
+                                                                                    });
+
+                                                                                });
+                                                                            } else {
+
+                                                                                jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                                                res.end(jsonString);
+                                                                            }
+                                                                        });
+
+                                                                    }
+
+                                                                });
+
+                                                            }
+                                                        });
+
+                                                    } else {
+                                                        res.status(404).send({message: 'User save failed'});
+
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                    else {
+                                        return res.status(401).send({message: 'Limit has exceeded'});
+                                    }
+                                } else {
+                                    return res.status(401).send({message: 'Limit Not Found'});
+                                }
+                            }
+                            else {
+                                return res.status(404).send({message: 'Role Not Found'});
+                            }
+                        }
+                        else {
+                            return res.status(404).send({message: 'Organization Not Found'});
+                        }
+                    }
+                });
+            }
+        });
+
+
+    }
+
+};
+
+
+//SignUPInvitation
+
 module.exports.Google_back = function(req, res) {
     var accessTokenUrl = 'https://accounts.google.com/o/oauth2/token';
     var peopleApiUrl = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect';
@@ -2640,8 +3142,13 @@ module.exports.Facebook = function(req, res) {
     }
     // Step 1. Exchange authorization code for access token.
     request.get({ url: accessTokenUrl, qs: params, json: true }, function(err, response, accessToken) {
-        if (response.statusCode !== 200) {
-            return res.status(500).send({message: accessToken.error.message});
+
+        if(response) {
+            if (response.statusCode !== 200) {
+                return res.status(500).send({message: accessToken.error.message});
+            }
+        }else{
+            return res.status(500).send({message: 'No response Found'});
         }
 
         // Step 2. Retrieve profile information about the current user.

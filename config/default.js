@@ -50,7 +50,7 @@ module.exports = {
         ui_host: 'http://localhost/DVP-AdminConsole',
         agent_host: 'http://localhost/DVP-AgentConsole',
         common_signature: false,
-        multi_login: false
+        multi_login: true
 
 
     },
@@ -172,7 +172,5 @@ module.exports = {
     "ActiveDirectory": {
         "groupName": "FaceTone"
     }
-
-
 
 };

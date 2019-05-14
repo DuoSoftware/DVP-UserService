@@ -185,6 +185,7 @@ app.post('/auth/login', Login.Login);
 app.post('/auth/logintest', Login.LoginTest);
 app.post('/auth/verify', Login.Validation);
 app.post('/auth/signup', Login.SignUP);
+app.post('/auth/signup', Login.SignUPInvitation);
 app.post('/auth/forget', Login.ForgetPassword);
 app.post('/auth/forget/token', Login.ForgetPasswordToken);
 app.post('/auth/reset/:token', Login.ResetPassword);
@@ -214,6 +215,7 @@ app.post('/DVP/API/:version/UsersByRoles', jwt({secret: secret.Secret}),authoriz
 
 app.get('/DVP/API/:version/User/:name/exsists', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserExists);
 app.get('/DVP/API/:version/User/:name/invitable', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserInvitable);
+app.get('/DVP/API/:version/Users/invitable', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserInvitable);
 app.get('/DVP/API/:version/UserAccount/:name/exsists', jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}), userService.UserAccountExists);
 
 app.delete('/DVP/API/:version/User/:name', jwt({secret: secret.Secret}),authorization({resource:"user", action:"delete"}), userService.DeleteUser);
@@ -504,6 +506,8 @@ app.get('/DVP/API/:version/ExternalUserConfig/UserFields', jwt({secret: secret.S
 
 app.get('/DVP/API/:version/ReceivedInvitations',jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}),UserInvitationService.GetMyReceivedInvitations);
 app.get('/DVP/API/:version/SendInvitations',jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}),UserInvitationService.GetMySendInvitations);
+app.post('/DVP/API/:version/Invitations',jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}),UserInvitationService.CreateInvitations);
+app.post('/DVP/API/:version/RequestInvitations',jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}),UserInvitationService.RequestInvitations);
 app.post('/DVP/API/:version/Invitation/to/:to',jwt({secret: secret.Secret}),authorization({resource:"user", action:"write"}),UserInvitationService.CreateInvitation);
 app.get('/DVP/API/:version/Invitation/:id',jwt({secret: secret.Secret}),authorization({resource:"user", action:"read"}),UserInvitationService.GetInvitation);
 app.put('/DVP/API/:version/Invitation/Accept/:id/company/:company/tenant/:tenant',jwt({secret: secret.Secret}),authorization({resource:"myUserProfile", action:"write"}),UserInvitationService.AcceptUserInvitation);
