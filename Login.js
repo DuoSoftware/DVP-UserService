@@ -25,6 +25,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var crypto = require('crypto');
 var Console = require('dvp-mongomodels/model/Console');
 var ADService = require('./ActiveDirectoryService');
+var UserInvitation = require('dvp-mongomodels/model/UserInvitation').UserInvitation;
 
 
 var redisip = config.Redis.ip;
@@ -1600,7 +1601,11 @@ module.exports.SignUPInvitation = function(req, res) {
         var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + req.body['g-recaptcha-response'] + "&remoteip=" + req.connection.remoteAddress;
 
         request(verificationUrl, function (error, response, body) {
-            body = JSON.parse(body);
+            try {
+                body = JSON.parse(body);
+            }catch(ex){
+                return res.status(409).send({message: 'captcha validation failed'});
+            }
             if (body.success !== undefined && !body.success) {
 
                 return res.status(409).send({message: 'Failed captcha verification'});
@@ -1619,6 +1624,7 @@ module.exports.SignUPInvitation = function(req, res) {
                     var role =req.body.role;
                     var from = invitation.from;
                     var to = invitation.to;
+                    var password = req.body.password;
 
 
                     Org.findOne({ tenant: tenant, id: company }, function (err, org) {
@@ -1639,7 +1645,7 @@ module.exports.SignUPInvitation = function(req, res) {
 
                                  */
 
-                                if (role && to) {
+                                if (role && to && password) {
                                     var userRole = role.toLowerCase();
                                     var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
                                     if (limitObj) {
@@ -1666,7 +1672,7 @@ module.exports.SignUPInvitation = function(req, res) {
                                                             verified: false
                                                         },
                                                         username: to,
-                                                        password: req.body.password,
+                                                        password: password,
                                                         //user_meta: {role: "admin"},
                                                         systemuser: true,
                                                         //companyname: req.body.companyname,
@@ -1725,7 +1731,7 @@ module.exports.SignUPInvitation = function(req, res) {
                                                                 if (err) {
                                                                     user.remove(function (err) {
                                                                     });
-                                                                    return res.status(400).send({message: 'Accountr Creation failed'});
+                                                                    return res.status(400).send({message: 'Account Creation failed'});
                                                                 } else {
 
                                                                     limitObj.currentAccess.push(user.username);
@@ -1762,8 +1768,9 @@ module.exports.SignUPInvitation = function(req, res) {
                                                                                         redisClient.set("activate" + ":" + token, user._id, function (err, val) {
                                                                                             if (err) {
 
-                                                                                                jsonString = messageFormatter.FormatMessage(err, "Create activation token failed", false, user);
-                                                                                                res.end(jsonString);
+                                                                                                //jsonString = messageFormatter.FormatMessage(err, "Create activation token failed", false, user);
+                                                                                                //res.end(jsonString);
+                                                                                                res.status(404).send({message: 'Create activation token failed'});
 
                                                                                             } else {
 
@@ -1775,7 +1782,7 @@ module.exports.SignUPInvitation = function(req, res) {
                                                                                                     "tenant": config.Tenant.activeTenant
                                                                                                 };
 
-                                                                                                sendObj.to = req.body.mail;
+                                                                                                sendObj.to = to;
                                                                                                 sendObj.from = "no-reply";
                                                                                                 sendObj.template = "By-User Registration Confirmation";
                                                                                                 sendObj.Parameters = {
@@ -1786,16 +1793,18 @@ module.exports.SignUPInvitation = function(req, res) {
 
                                                                                                 PublishToQueue("EMAILOUT", sendObj)
 
-                                                                                                jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
-                                                                                                res.end(jsonString);
+                                                                                                //jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                                                                //res.end(jsonString);
+                                                                                                return res.status(200).send({message: "Create Account successful"});
                                                                                             }
                                                                                         });
 
                                                                                     });
                                                                                 } else {
 
-                                                                                    jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
-                                                                                    res.end(jsonString);
+                                                                                    //jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
+                                                                                    //res.end(jsonString);
+                                                                                    return res.status(200).send({message: "Create Account successful"});
                                                                                 }
                                                                             });
 
@@ -1822,7 +1831,7 @@ module.exports.SignUPInvitation = function(req, res) {
                                     }
                                 }
                                 else{
-                                    return res.status(404).send({message: 'Role Not Found'});
+                                    return res.status(404).send({message: 'Role or Password Not Found'});
                                 }
                             }
                             else{
@@ -1849,6 +1858,7 @@ module.exports.SignUPInvitation = function(req, res) {
                 var role = req.body.role;
                 var from = invitation.from;
                 var to = invitation.to;
+                var password = req.body.password;
 
 
                 Org.findOne({tenant: tenant, id: company}, function (err, org) {
@@ -1869,7 +1879,7 @@ module.exports.SignUPInvitation = function(req, res) {
 
                              */
 
-                            if (role && to) {
+                            if (role && to && password) {
                                 var userRole = role.toLowerCase();
                                 var limitObj = FilterObjFromArray(org.consoleAccessLimits, "accessType", userRole);
                                 if (limitObj) {
@@ -1896,7 +1906,7 @@ module.exports.SignUPInvitation = function(req, res) {
                                                         verified: false
                                                     },
                                                     username: to,
-                                                    password: req.body.password,
+                                                    password: password,
                                                     //user_meta: {role: "admin"},
                                                     systemuser: true,
                                                     //companyname: req.body.companyname,

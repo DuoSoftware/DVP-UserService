@@ -185,7 +185,7 @@ app.post('/auth/login', Login.Login);
 app.post('/auth/logintest', Login.LoginTest);
 app.post('/auth/verify', Login.Validation);
 app.post('/auth/signup', Login.SignUP);
-app.post('/auth/signup', Login.SignUPInvitation);
+app.post('/auth/inviteSignup', Login.SignUPInvitation);
 app.post('/auth/forget', Login.ForgetPassword);
 app.post('/auth/forget/token', Login.ForgetPasswordToken);
 app.post('/auth/reset/:token', Login.ResetPassword);

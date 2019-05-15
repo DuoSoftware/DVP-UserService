@@ -1427,7 +1427,7 @@ function ReActivateUser(req, res) {
                                                         addAuditTrail(tenant, company, req.user.iss, auditData);
 
 
-                                                        
+
 
                                                         limitObj.currentAccess.push(updatedUser.user);
                                                         Org.findOneAndUpdate({
