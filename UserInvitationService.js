@@ -620,6 +620,7 @@ function AcceptUserInvitation(req, res) {
                     } else {
 
                         jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
+                        SenNotification(company, tenant, "system", invitation.from, "User "+invitation.to+ " Accepted Your Request", function () {});
                         res.end(jsonString);
                     }
 
@@ -674,6 +675,7 @@ function RejectUserInvitation(req, res) {
                     } else {
 
                         jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
+                        SenNotification(company, tenant, "system", invitation.from, "User "+invitation.to+ " Rejected Your Request", function () {});
                         res.end(jsonString);
                     }
 

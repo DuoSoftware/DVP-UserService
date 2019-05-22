@@ -115,6 +115,50 @@ redisClient.on('error', function (err) {
     console.log('Error '.red, err);
 });
 
+var SendNotification = function (company, tenant, from, to, message, callback) {
+    //var jsonStr = JSON.stringify(postData);
+    var accessToken = util.format("bearer %s", config.Services.accessToken);
+    var internalAccessToken = util.format("%d:%d", tenant, company);
+
+    var data = {
+        From: from,
+        To: to,
+        Message: message,
+        Direction: "STATELESS",
+        CallbackURL: "",
+        Ref: "",
+        isPersist : true
+    };
+
+
+    var serviceurl = util.format("http://%s/DVP/API/%s/NotificationService/Notification/initiate", config.Services.notificationServiceHost, config.Services.notificationServiceVersion);
+    if (validator.isIP(config.Services.notificationServiceHost)) {
+        serviceurl = util.format("http://%s:%s/DVP/API/%s/NotificationService/Notification/initiate", config.Services.notificationServiceHost, config.Services.notificationServicePort, config.Services.notificationServiceVersion);
+    }
+
+    var options = {
+        url: serviceurl,
+        method: 'POST',
+        headers: {
+
+            'authorization': accessToken,
+            'companyinfo': internalAccessToken,
+            'eventname': 'invite'
+        },
+        json: data
+    };
+    try {
+        request.post(options, function optionalCallback(err, httpResponse, body) {
+            if (err) {
+                console.log('upload failed:', err);
+            }
+            console.log('Server returned: %j', body);
+            callback(err, httpResponse, body);
+        });
+    } catch (ex) {
+        callback(ex, undefined, undefined);
+    }
+};
 
 function FilterObjFromArray(itemArray, field, value) {
     var resultObj;
@@ -1791,7 +1835,8 @@ module.exports.SignUPInvitation = function(req, res) {
                                                                                                     url: url
                                                                                                 }
 
-                                                                                                PublishToQueue("EMAILOUT", sendObj)
+                                                                                                PublishToQueue("EMAILOUT", sendObj);
+                                                                                                SendNotification(company, tenant, "system", invitation.from, "User "+invitation.to+ " Accepted Your Request", function () {});
 
                                                                                                 //jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
                                                                                                 //res.end(jsonString);
@@ -2027,7 +2072,9 @@ module.exports.SignUPInvitation = function(req, res) {
                                                                                                 url: url
                                                                                             }
 
-                                                                                            PublishToQueue("EMAILOUT", sendObj)
+                                                                                            PublishToQueue("EMAILOUT", sendObj);
+
+                                                                                            SendNotification(company, tenant, "system", invitation.from, "User "+invitation.to+ " Accepted Your Request", function () {});
 
                                                                                             jsonString = messageFormatter.FormatMessage(err, "Create Account successful", true, user);
                                                                                             res.end(jsonString);
@@ -2080,7 +2127,6 @@ module.exports.SignUPInvitation = function(req, res) {
     }
 
 };
-
 
 //SignUPInvitation
 
