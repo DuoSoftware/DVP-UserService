@@ -26,7 +26,7 @@ var crypto = require('crypto');
 var Console = require('dvp-mongomodels/model/Console');
 var ADService = require('./ActiveDirectoryService');
 var UserInvitation = require('dvp-mongomodels/model/UserInvitation').UserInvitation;
-
+var validator = require("validator");
 
 var redisip = config.Redis.ip;
 var redisport = config.Redis.port;
