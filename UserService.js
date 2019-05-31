@@ -2938,7 +2938,7 @@ function AddUserAppScopes(req, res) {
                                                 var consoleScope = FilterObjFromArray(assignUser.client_scopes, "consoleName", appConsole.consoleName);
                                                 if (consoleScope) {
                                                     var menuItem = FilterObjFromArray(consoleScope.menus, "menuItem", req.body.menuItem);
-                                                    if (menuItem) {
+                                                    if (menuItem && menuItem.menuAction.length>0) {
                                                         for (var j = 0; j < menuItem.menuAction.length; j++) {
                                                             var menuAction = FilterObjFromArray(menuItem.menuAction, "scope", req.body.menuAction[j].scope);
                                                             if (menuAction) {
