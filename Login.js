@@ -1656,7 +1656,8 @@ module.exports.SignUPInvitation = function(req, res) {
             }
 
             UserInvitation.findOne({
-                _id: req.body.invitation
+                _id: req.body.invitation,
+                status: "pending"
             }, function (err, invitation) {
                 if (err || !invitation) {
 
@@ -1891,7 +1892,8 @@ module.exports.SignUPInvitation = function(req, res) {
 
 
         UserInvitation.findOne({
-            _id: req.body.invitation
+            _id: req.body.invitation,
+            status: "pending"
         }, function (err, invitation) {
             if (err || !invitation) {
 
