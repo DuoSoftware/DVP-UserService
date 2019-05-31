@@ -842,7 +842,7 @@ function SearchExternalUsers(req, res) {
     }, {score: {$meta: "textScore"}}).populate({
         path: 'form_submission',
         populate: {path: 'form'}
-    }).sort({score: {$meta: 'textScore'}})
+    }).sort({score: {$meta: 'textScore'}}).limit(10)
         .exec(function (err, users) {
             if (err) {
 
