@@ -314,6 +314,8 @@ function GetOrganisationPackages(req, res){
             res.end(jsonString);
         });
     }catch(ex){
+        jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+        res.end(jsonString);
         console.log(ex);
     }
 }
@@ -472,7 +474,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                         if (org.tenantRef && org.tenantRef.rootDomain) {
                                             domainData = org.companyName + "." + org.tenantRef.rootDomain;
 
-                                            if (org.packages.indexOf(packageName) == -1) {
+                                            if (org.packages.indexOf(packageName) == -1 || vPackage.navigationType.toLowerCase() === 'user') {
                                                 var billingObj = {
                                                     userInfo: requestedUser,
                                                     companyInfo: org,
@@ -489,7 +491,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                 };
 
                                                 var typeExist = FilterObjFromArray(org.packageDetails, 'veeryPackage.navigationType', vPackage.navigationType);
-                                                if (typeExist) {
+                                                if (typeExist && vPackage.navigationType.toLowerCase() !== 'user') { // type exists or navigationType is not user
 
                                                     if (typeExist.veeryPackage.price <= vPackage.price) {
 
@@ -532,7 +534,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                 } else {
                                                     org.updated_at = Date.now();
                                                     org.packages.push(packageName);
-                                                    org.packages = UniqueArray(org.packages);
+                                                    //org.packages = UniqueArray(org.packages);
                                                     org.packageDetails.push({veeryPackage: vPackage._id, buyDate: Date.now()});
 
                                                     if (vPackage.price > 0) {
@@ -870,7 +872,12 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
                     count++;
                     var cal = org.consoleAccessLimits[j];
                     if (cal.accessType == vCal.accessType) {
-                        org.consoleAccessLimits[j].accessLimit = tempCal.accessLimit;
+                        if(vPackage.navigationType.toLowerCase() === 'user'){ // if user package is bought increment access limit, no replacement
+                            org.consoleAccessLimits[j].accessLimit += tempCal.accessLimit;
+                        }
+                        else {
+                            org.consoleAccessLimits[j].accessLimit = tempCal.accessLimit;
+                        }
                         break;
                     }
                     if (count == org.consoleAccessLimits.length) {
@@ -899,8 +906,13 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
                 }
 
                 if (eUserScope) {
-                    if (eUserScope.accessLimit != -1 && eUserScope.accessLimit < scopes.accessLimit) {
-                        eUserScope.accessLimit = scopes.accessLimit;
+                    if(vPackage.navigationType.toLowerCase() === 'user' && vPackage.consoles.includes('AGENT_CONSOLE')){
+                        if(eUserScope.scopeName === 'ardsresource' || eUserScope.scopeName === 'sipuser'){ // increment ards and sip resource limits if a user agent package is bought
+                            eUserScope.accessLimit += 1;
+                        }
+                      }
+                    else if (eUserScope.accessLimit != -1 && eUserScope.accessLimit < scopes.accessLimit) {
+                            eUserScope.accessLimit = scopes.accessLimit;
                     }
                 } else {
                     var rLimit = {
@@ -918,17 +930,18 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
                 jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Failed", false, undefined);
             } else {
                 // UpdateUser(org.ownerId, vPackage);
-                UpdateUser(userAccountId, vPackage);
-                AssignTaskToOrganisation(company, tenant, vPackage.veeryTask);
-                if(addDefaultData)
-                {
-                    AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
-                    AddDefaultRule(company, tenant);
-                    AddDefaultTicketTypes(company, tenant);
-                    AddDefaultFileCategories(company, tenant);
-                    businessUnitService.AddDefaultBusinessUnit(company, tenant, org.ownerRef.id);
-                    externalUserService.AddDefaultAccessibleFields(company, tenant);
+                if(vPackage.navigationType.toLowerCase() !== 'user') {
+                    UpdateUser(userAccountId, vPackage);
+                    AssignTaskToOrganisation(company, tenant, vPackage.veeryTask);
+                    if (addDefaultData) {
+                        AssignContextAndCloudEndUserToOrganisation(company, tenant, domainData);
+                        AddDefaultRule(company, tenant);
+                        AddDefaultTicketTypes(company, tenant);
+                        AddDefaultFileCategories(company, tenant);
+                        businessUnitService.AddDefaultBusinessUnit(company, tenant, org.ownerRef.id);
+                        externalUserService.AddDefaultAccessibleFields(company, tenant);
 
+                    }
                 }
                 jsonString = messageFormatter.FormatMessage(err, "Assign Package to Organisation Successful", true, org);
             }
@@ -1584,8 +1597,10 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
                                             {scope: "resource", read: true},
                                             {scope: "package", read: true},
                                             {scope: "console", read: true},
-                                            {"scope": "myNavigation", "read": true},
-                                            {"scope": "myUserProfile", "read": true}
+                                            {scope: "myNavigation", read: true},
+                                            {scope: "myUserProfile", read: true},
+                                            {scope: "wallet", read: true,write: true}
+
                                         ],
                                         created_at: Date.now(),
                                         updated_at: Date.now(),
@@ -1599,10 +1614,24 @@ function CreateOrganisationStanAlone(user, companyname, timezone, callback) {
                                             callback(err, undefined);
                                         } else {
                                             //rUser.company = cid;
+                                            if(account && org) {
+                                                user._doc.tenant = org.tenant;
+                                                user._doc.company = org.id;
+                                                user._doc.companyName = org.companyName;
+                                                user._doc.multi_login = account.multi_login;
+                                                user._doc.user_meta = account.user_meta;
+                                                user._doc.app_meta = account.app_meta;
+                                                user._doc.user_scopes = account.user_scopes;
+                                                user._doc.client_scopes = account.client_scopes;
+                                                user._doc.resourceid = account.resource_id;
+                                                user._doc.veeryaccount = account.veeryaccount;
+                                                user._doc.multi_login = account.multi_login;
+                                            }
+
                                             AssignPackageToOrganisationLib(cid, Tenants.id, "BASIC", user, true, function(jsonString){
                                                 console.log(jsonString);
+                                                callback(undefined, user);
                                             });
-                                            callback(undefined, user);
                                         }
                                     });
 
