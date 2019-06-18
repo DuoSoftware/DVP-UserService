@@ -763,6 +763,13 @@ function ResendUserInvitation(req, res) {
     var from = req.user.iss;
     var jsonString;
 
+    var role = "agent";
+
+    if (req.body && req.body.role) {
+        role = req.body.role;
+    }
+
+
     req.body.updated_at = Date.now();
     UserInvitation.findOneAndUpdate({
         _id: req.params.id,
@@ -770,7 +777,7 @@ function ResendUserInvitation(req, res) {
         tenant: tenant,
         from: from,
         $or:[{status: 'canceled'},{status:'rejected'}]
-    }, {status: "pending", update_at: Date.now()}, function (err, invitation) {
+    }, {status: "pending", update_at: Date.now()}, {new: true}, function (err, invitation) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Update User Invitation Failed", false, undefined);
@@ -778,35 +785,97 @@ function ResendUserInvitation(req, res) {
 
         } else {
 
-            if (invitation) {
+            Org.findOne({tenant: tenant, id: company}, function (err, org) {
+                if (err) {
+                    jsonString = messageFormatter.FormatMessage(err, "Get Organisation Failed", false, undefined);
+                    res.end(jsonString);
+                } else {
+                    if (org) {
 
-                var to = invitation.to;
-                //jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
-                UserAccount.findOneAndUpdate({company: company, tenant: tenant, user: to}, {
-                    varified: false,
-                    active: false,
-                    update_at: Date.now()
-                }, function (err, account) {
-                    if (err) {
+                        if (invitation) {
 
-                        jsonString = messageFormatter.FormatMessage(err, "Update User Invitation failed", false, undefined);
-                        res.end(jsonString);
+                            var to = invitation.to;
+                            //jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
+                            UserAccount.findOneAndUpdate({company: company, tenant: tenant, user: to}, {
+                                varified: false,
+                                active: false,
+                                update_at: Date.now()
+                            }, {new: true}, function (err, account) {
+                                if (err) {
 
-                    } else {
+                                    jsonString = messageFormatter.FormatMessage(err, "Update User Invitation failed", false, undefined);
+                                    res.end(jsonString);
 
-                        jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
+                                } else {
+
+
+                                    if (account) {
+                                        var sendObj = {
+                                            "company": 0,
+                                            "tenant": 1
+                                        };
+
+                                        sendObj.to = account.user;
+                                        sendObj.from = "no-reply";
+                                        sendObj.template = "By-User Invitation received";
+                                        sendObj.Parameters = {
+                                            message: invitation.message,
+                                            username: account.user,
+                                            owner: invitation.from,
+                                            created_at: new Date()
+                                        };
+
+                                        PublishToQueue("EMAILOUT", sendObj);
+
+                                        SenNotification(company, tenant, from, account.user, message, function () {
+
+                                        });
+                                    }
+
+                                    else {
+
+                                        var sendObj = {
+                                            "company": 0,
+                                            "tenant": 1
+                                        };
+
+                                        sendObj.to = item.to;
+                                        sendObj.from = "no-reply";
+                                        sendObj.template = "By-User Invitation url";
+                                        sendObj.Parameters = {
+                                            message: invitation.message,
+                                            username: invitation.to,
+                                            owner: from,
+                                            role: role,
+                                            company: org.companyName,
+                                            invitation: invitation._id,
+                                            url: config.auth.ui_host + '#/invitationSignUp?role=' + role + '&invitation='
+                                            + invitation._id + '&company=' + org.companyName,
+                                            created_at: new Date()
+                                        };
+
+                                        PublishToQueue("EMAILOUT", sendObj);
+                                    }
+
+
+                                    jsonString = messageFormatter.FormatMessage(undefined, "Update User Invitation Successful", true, invitation);
+                                    res.end(jsonString);
+                                }
+
+                            });
+
+                        } else {
+
+                            jsonString = messageFormatter.FormatMessage(new Error("No invitation found"), "Update User Invitation failed", false, undefined);
+                            res.end(jsonString);
+                        }
+                    }else{
+
+                        jsonString = messageFormatter.FormatMessage(err, "Organisation Data NotFound", false, undefined);
                         res.end(jsonString);
                     }
-
-                });
-
-            } else {
-
-                jsonString = messageFormatter.FormatMessage(new Error("No invitation found"), "Update User Invitation failed", false, undefined);
-                res.end(jsonString);
-            }
-
-
+                }
+            });
         }
 
     });
