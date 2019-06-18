@@ -15,6 +15,7 @@ var bcrypt = require('bcryptjs');
 var DbConn = require('dvp-dbmodels');
 var UserAccount = require('dvp-mongomodels/model/UserAccount');
 var auditTrailsHandler = require('dvp-common/AuditTrail/AuditTrailsHandler.js');
+var UserInvitation = require('dvp-mongomodels/model/UserInvitation').UserInvitation;
 
 
 var redisip = config.Redis.ip;
@@ -579,7 +580,7 @@ function arr_diff (a1, a2) {
 }
 //array intersection
 //array1.filter(value => -1 !== array2.indexOf(value))
-function UserInvitable(req, res) {
+async function UserInvitable(req, res) {
 
 
     logger.debug("DVP-UserService.UserInvitable Internal method ");
@@ -587,97 +588,162 @@ function UserInvitable(req, res) {
     var company = parseInt(req.user.company);
     var tenant = parseInt(req.user.tenant);
     var jsonString;
-    var userNames  = req.params.name || req.query.name;
+    var allNames = req.params.name || req.query.name;
+    var userNames  = [];
 
-    if(!Array.isArray(userNames)){
-        userNames = [userNames];
+    if(!Array.isArray(allNames)){
+        allNames = [allNames];
     }
 
-    User.find({
-        username: {$in : userNames}
-        //req.params.name
-        //company: company,
-        //tenant: tenant
-    }).exec(function (err, users) {
-        if (err) {
 
-            jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
-            res.end(jsonString);
+    var invitedUsers = [];
 
-        } else {
+    invitedUsers = await checkInvitedUsers(allNames);
+    userNames = arr_diff(allNames,invitedUsers);
+    if(userNames.length>0)
+    {
+        User.find({
+            username: {$in : userNames}
+            //req.params.name
+            //company: company,
+            //tenant: tenant
+        }).exec(function (err, users) {
+            if (err) {
 
-            if (users) {
-                //jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
-                var accountNames = users.map(function(item){
-                    return item.username;
-                });
-
-                var commonUsers = userNames.filter(function(value){
-                    return -1 !== accountNames.indexOf(value);
-                });
-
-                var unavailableUsers = arr_diff(userNames, accountNames);
-
-                UserAccount.find({
-                    user: {
-                        $in: accountNames
-                    },
-                    company: company,
-                    tenant: tenant
-                }).populate('userref', '-password').exec(function (err, userAccounts) {
-
-                    if (err) {
-                        jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed, Not available for invitation", false, undefined);
-                    } else {
-                        if (userAccounts) {
-
-                            var availableAccounts = userAccounts.map(function(item){
-                                return item.user;
-                            });
-
-                            var unavailableAccounts = arr_diff(commonUsers, availableAccounts);
-
-                            var commonAccounts = commonUsers.filter(function(value){
-                                return -1 !== availableAccounts.indexOf(value);
-                            });
-
-                            jsonString = messageFormatter.FormatMessage(err, "Get User Account Successful, Not available for invitation", true, {
-                                requestUsers: userNames,
-                                unavailableAccounts: unavailableAccounts,
-                                unavailableUsers : unavailableUsers,
-                                commonUsers: commonAccounts
-                            });
-
-                        } else {
-
-                            unavailableAccounts = commonUsers;
-                            jsonString = messageFormatter.FormatMessage(err, "No user Account found, Available for Invitation", true, {
-                                requestUsers: userNames,
-                                unavailableAccounts: unavailableAccounts,
-                                unavailableUsers : unavailableUsers,
-                                commonUsers: []
-                            });
-                        }
-                    }
-                    res.end(jsonString);
-                });
+                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", false, undefined);
+                res.end(jsonString);
 
             } else {
 
-                var unavailableUsers = userNames;
-                jsonString = messageFormatter.FormatMessage(err, "Get User Failed", true, {
-                    requestUsers: userNames,
-                    unavailableAccounts: [],
-                    unavailableUsers : userNames,
-                    commonUsers: []
-                });
-                res.end(jsonString);
+                if (users) {
+                    //jsonString = messageFormatter.FormatMessage(err, "Get User Successful", true, undefined);
+                    var accountNames = users.map(function(item){
+                        return item.username;
+                    });
 
+                    var commonUsers = userNames.filter(function(value){
+                        return -1 !== accountNames.indexOf(value);
+                    });
+
+                    var unavailableUsers = arr_diff(userNames, accountNames);
+
+                    UserAccount.find({
+                        user: {
+                            $in: accountNames
+                        },
+                        company: company,
+                        tenant: tenant
+                    }).populate('userref', '-password').exec(function (err, userAccounts) {
+
+                        if (err) {
+                            jsonString = messageFormatter.FormatMessage(err, "Get User Account Failed, Not available for invitation", false, undefined);
+                        } else {
+                            if (userAccounts) {
+
+                                var availableAccounts = userAccounts.map(function(item){
+                                    return item.user;
+                                });
+
+                                var unavailableAccounts = arr_diff(commonUsers, availableAccounts);
+
+                                var commonAccounts = commonUsers.filter(function(value){
+                                    return -1 !== availableAccounts.indexOf(value);
+                                });
+
+                                jsonString = messageFormatter.FormatMessage(err, "Get User Account Successful, Not available for invitation", true, {
+                                    requestUsers: allNames,
+                                    unavailableAccounts: unavailableAccounts,
+                                    unavailableUsers : unavailableUsers,
+                                    commonUsers: commonAccounts,
+                                    invitedUsers:invitedUsers
+
+                                });
+
+                            } else {
+
+                                unavailableAccounts = commonUsers;
+                                jsonString = messageFormatter.FormatMessage(err, "No user Account found, Available for Invitation", true, {
+                                    requestUsers: allNames,
+                                    unavailableAccounts: unavailableAccounts,
+                                    unavailableUsers : unavailableUsers,
+                                    commonUsers: [],
+                                    invitedUsers:invitedUsers
+                                });
+                            }
+                        }
+                        res.end(jsonString);
+                    });
+
+                } else {
+
+                    var unavailableUsers = userNames;
+                    jsonString = messageFormatter.FormatMessage(err, "Get User Failed", true, {
+                        requestUsers: allNames,
+                        unavailableAccounts: [],
+                        unavailableUsers : userNames,
+                        commonUsers: [],
+                        invitedUsers:invitedUsers
+                    });
+                    res.end(jsonString);
+
+                }
             }
-        }
-    });
+        });
+    }
+    else
+    {
+
+        jsonString = messageFormatter.FormatMessage(err, "Get User Failed", true, {
+            requestUsers: allNames,
+            unavailableAccounts: [],
+            unavailableUsers : [],
+            commonUsers: [],
+            invitedUsers:invitedUsers
+        });
+        res.end(jsonString);
+    }
+
+
+
+
+
+
+
 
 }
+
+
+async function checkInvitedUsers(userNames) {
+
+    UserInvitation.find({to:{$in:userNames}}).exec(function(err,resInv)
+    {
+        if (err) {
+
+            logger.debug("DVP-UserService.UserInvitable Searching invitations failed ");
+            return [];
+
+        }
+        else {
+
+            if(resInv)
+            {
+                var invUsers = resInv.map(function(item)
+                {
+                    return item.to;
+                });
+                return invUsers;
+
+
+            }
+            else
+            {
+                return [];
+            }
+
+        }
+    });
+}
+
 
 
 function UserInvitable_back(req, res) {
