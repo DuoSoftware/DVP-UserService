@@ -627,7 +627,7 @@ function UserInvitable(req, res) {
 
                         var unavailableUsers = arr_diff(userNames, accountNames);
 
-                        checkInvitedUsers(unavailableUsers,function (errInv,resInv) {
+                        checkInvitedUsers(unavailableUsers,company,tenant,function (errInv,resInv) {
                             invitedUsers = resInv;
 
                             unavailableUsers = arr_diff(unavailableUsers, invitedUsers);
@@ -688,7 +688,7 @@ function UserInvitable(req, res) {
 
                         var unavailableUsers = userNames;
 
-                        checkInvitedUsers(unavailableUsers,function (errInv,resInv) {
+                        checkInvitedUsers(unavailableUsers,company,tenant,function (errInv,resInv) {
                             invitedUsers=resInv;
                             userNames = arr_diff(unavailableUsers,invitedUsers);
                             jsonString = messageFormatter.FormatMessage(err, "Get User Failed", true, {
@@ -738,9 +738,9 @@ function UserInvitable(req, res) {
 }
 
 
- function checkInvitedUsers(userNames,callback) {
+ function checkInvitedUsers(userNames,company,tenant,callback) {
 
-    UserInvitation.find({to:{$in:userNames}}).exec(function(err,resInv)
+    UserInvitation.find({to:{$in:userNames},company:company,tenant:tenant}).exec(function(err,resInv)
     {
         if (err) {
 
