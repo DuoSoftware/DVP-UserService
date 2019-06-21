@@ -346,6 +346,31 @@ function GetOrganisationPackagesWithDetails(req, res){
     });
 }
 
+function GetOrganisationConsoleAccessLimits(req, res){
+    logger.debug("DVP-UserService.GetOrganisationConsoleAccessLimits Internal method ");
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.user.company);
+    var owner = req.user.iss;
+    var jsonString;
+    Org.findOne({ownerId:owner, tenant: tenant, id: company}, function(err, org) {
+        if (err) {
+            jsonString = messageFormatter.FormatMessage(err, "Get Organisation Console Access Limits Failed", false, undefined);
+        }else{
+
+            if(org) {
+                var accessLimits = {consoleAccessLimits: org.consoleAccessLimits};
+                jsonString = messageFormatter.FormatMessage(undefined, "Get Organisation Console Access Limits Successful", true, accessLimits);
+            }
+            else{
+
+                jsonString = messageFormatter.FormatMessage(err, "Get Organisation Console Access Limits Failed", false, undefined);
+            }
+
+        }
+        res.end(jsonString);
+    });
+}
+
 function DeleteOrganisation(req,res){
     logger.debug("DVP-UserService.DeleteOrganisation Internal method ");
 
@@ -2215,6 +2240,7 @@ function GetSpaceLimitForTenant(req, res){
 
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
+module.exports.GetOrganisationConsoleAccessLimits = GetOrganisationConsoleAccessLimits;
 module.exports.DeleteOrganisation = DeleteOrganisation;
 //module.exports.CreateOrganisation = CreateOrganisation;
 module.exports.UpdateOrganisation = UpdateOrganisation;
