@@ -276,6 +276,7 @@ app.get('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authoriza
 app.get('/DVP/API/:version/Organisation/ConsoleAccessLimits', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"read"}), organisationService.GetOrganisationConsoleAccessLimits);
 app.delete('/DVP/API/:version/Organisation', jwt({secret: secret.Secret}),authorization({resource:"organisation", action:"delete"}), organisationService.DeleteOrganisation);
 app.put('/DVP/API/:version/Organisation/Activate/:state', jwt({secret: secret.Secret}),authorization({resource:"organisationManage", action:"write"}), organisationService.ActivateOrganisation);
+app.get('/DVP/API/:version/Organisation/Packages/:company/:type?', jwt({secret: secret.Secret}),authorization({resource:"package", action:"read"}), organisationService.GetOrganisationPackagesByType);
 
 
 //app.post('/DVP/API/:version/Organisation', passport.authenticate('local', { session: false }), organisationService.CreateOrganisation);

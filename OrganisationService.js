@@ -137,6 +137,15 @@ function FilterObjFromArray(itemArray, field, value){
     }
 }
 
+function multipleAllowed(navigationType){
+    var allowedNavTypes = ['user', 'license'];
+ 
+    if(allowedNavTypes.indexOf(navigationType.toLowerCase()) == -1)
+        return false
+    else 
+        return true;
+}
+
 function UniqueArray(array) {
     var processed = [];
     if(array && Array.isArray(array)) {
@@ -499,7 +508,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                         if (org.tenantRef && org.tenantRef.rootDomain) {
                                             domainData = org.companyName + "." + org.tenantRef.rootDomain;
 
-                                            if (org.packages.indexOf(packageName) == -1 || vPackage.navigationType.toLowerCase() === 'user') {
+                                            if (org.packages.indexOf(packageName) == -1 || multipleAllowed(vPackage.navigationType)) {
                                                 var billingObj = {
                                                     userInfo: requestedUser,
                                                     companyInfo: org,
@@ -516,7 +525,7 @@ var AssignPackageToOrganisationLib = function(company, tenant, packageName, requ
                                                 };
 
                                                 var typeExist = FilterObjFromArray(org.packageDetails, 'veeryPackage.navigationType', vPackage.navigationType);
-                                                if (typeExist && vPackage.navigationType.toLowerCase() !== 'user') { // type exists or navigationType is not user
+                                                if (typeExist && !multipleAllowed(vPackage.navigationType)) { // type exists or navigationType is not user
 
                                                     if (typeExist.veeryPackage.price <= vPackage.price) {
 
@@ -2238,6 +2247,42 @@ function GetSpaceLimitForTenant(req, res){
     });
 }
 
+function GetOrganisationPackagesByType(req, res){
+    logger.debug("DVP-UserService.GetOrganisationPackagesByType Internal method ");
+
+    var tenant = parseInt(req.user.tenant);
+    var company = parseInt(req.params.company);
+    var packageType = req.params.type;
+    var jsonString;
+
+    var match = {};
+
+    if(packageType)
+        match.navigationType = packageType;
+
+    try {
+        Org.findOne({tenant: tenant, id: company}).populate({path: 'packageDetails.veeryPackage', match : match, select: '-resources -consoleAccessLimit', populate : {path: 'Package'}}).select('packageDetails')
+        .exec(function(err, org) {
+            if (err) {
+                jsonString = messageFormatter.FormatMessage(err, "Get Organisation Packages Failed", false, undefined);
+            }else{
+                if(org && org.packageDetails){
+                    var packages = org.packageDetails.filter(function(pkg){  return pkg.veeryPackage; });
+                    jsonString = messageFormatter.FormatMessage(err, "Get Organisation Packages Successful", true, packages);
+                }else{
+                    jsonString = messageFormatter.FormatMessage(new Error("Organization Not Found!"), "Get Organisation Packages Failed", false, undefined);
+                }
+            }
+            res.end(jsonString);
+        });
+    
+    } catch(e) {
+        jsonString = messageFormatter.FormatMessage(e, "Get Organisation Packages Failed", false, undefined);
+        res.end(jsonString);
+        console.log(e);
+    };
+}
+
 module.exports.GetOrganisation = GetOrganisation;
 module.exports.GetOrganisations = GetOrganisations;
 module.exports.GetOrganisationConsoleAccessLimits = GetOrganisationConsoleAccessLimits;
@@ -2248,6 +2293,7 @@ module.exports.AssignPackageToOrganisation = AssignPackageToOrganisation;
 module.exports.RemovePackageFromOrganisation = RemovePackageFromOrganisation;
 //module.exports.CreateOwner = CreateOwner;
 module.exports.GetOrganisationPackages = GetOrganisationPackages;
+module.exports.GetOrganisationPackagesByType = GetOrganisationPackagesByType;
 module.exports.GetOrganisationPackagesWithDetails = GetOrganisationPackagesWithDetails;
 module.exports.GetOrganisationName = GetOrganisationName;
 module.exports.AssignPackageUnitToOrganisation = AssignPackageUnitToOrganisation;
