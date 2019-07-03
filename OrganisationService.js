@@ -923,6 +923,9 @@ var SetPackageToOrganisation = function(company, tenant, domainData, vPackage, o
                     }
                 }
             } else {
+                if (vCal.accessType == "admin") {
+                    tempCal.currentAccess.push(org.ownerId);
+                }
                 org.consoleAccessLimits.push(tempCal);
             }
         }
