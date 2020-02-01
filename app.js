@@ -152,7 +152,7 @@ app.set('view engine', 'ejs');
  next();
  });
  */
-
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(session({ secret: 'keyboard cat', resave: true, saveUninitialized: true}));
@@ -160,7 +160,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(cookieParser());
 app.use(errorhandler({ dumpExceptions: true, showStack: true }));
-app.use(cors());
+
 
 var hc = new healthcheck(app, {redis: userService.RedisCon, pg: userService.DbConn, mongo: mongomodels.connection});
 hc.Initiate();

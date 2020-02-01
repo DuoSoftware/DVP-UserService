@@ -947,6 +947,9 @@ module.exports.Login =  function(req, res) {
 
                                                     GetJWT(user, claims_arr, req.body.clientID, 'password', req, function (err, isSuccess, token) {
 
+                                                        if(err){
+                                                            logger.error(`GetJWT failed with Error ${err}`);
+                                                        }
                                                         if (token) {
                                                             return res.send({state: 'login', token: token});
                                                         } else {
