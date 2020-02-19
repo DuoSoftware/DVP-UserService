@@ -21,7 +21,6 @@
     "node-uuid": "^1.4.8",
     "passport": "^0.4.1",
     "q": "^1.5.1",
-    "restify": "^8.5.1",
     "restify-jwt": "^0.4.0",
     "stringformat": "0.0.5"
   },
