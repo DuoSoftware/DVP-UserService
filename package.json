@@ -13,7 +13,7 @@
     "dvp-common": "^1.5.2",
     "dvp-dbmodels": "^3.4.0",
     "dvp-healthcheck": "^1.0.3",
-    "dvp-mongomodels": "^5.4.0",
+    "dvp-mongomodels": "^6.0.2",
     "errorhandler": "^1.5.1",
     "express": "^4.17.1",
     "express-session": "^1.17.0",
@@ -21,6 +21,7 @@
     "node-uuid": "^1.4.8",
     "passport": "^0.4.1",
     "q": "^1.5.1",
+    "restify": "^8.5.1",
     "restify-jwt": "^0.4.0",
     "stringformat": "0.0.5"
   },
