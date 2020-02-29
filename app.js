@@ -25,6 +25,18 @@ var mongomodels = require("dvp-mongomodels");
 var port = config.Host.port || 3000;
 var host = config.Host.vdomain || "localhost";
 
+process.on("uncaughtException", function(err) {
+  console.error(err);
+  console.log("[Unhandled Exception] Node Exiting...");
+  process.exit(1);
+});
+
+process.on("unhandledRejection", err => {
+  console.error(err);
+  console.log("[Unhandled Rejection] Node Exiting...");
+  process.exit(1);
+});
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
