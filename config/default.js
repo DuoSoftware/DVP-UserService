@@ -60,11 +60,11 @@ module.exports = {
 
   DB: {
     Type: "postgres",
-    User: "duo",
-    Password: "DuoS123",
+    User: "",
+    Password: "",
     Port: 5432,
-    Host: "ec2-18-189-192-150.us-east-2.compute.amazonaws.com",
-    Database: "duo"
+    Host: "",
+    Database: ""
   },
 
   Redis: {
@@ -118,12 +118,12 @@ module.exports = {
   },
 
   Mongo: {
-    ip: "ec2-18-189-192-150.us-east-2.compute.amazonaws.com",
-    port: "27017",
-    dbname: "dvpdb",
-    password: "DuoS123",
-    user: "duo",
-    replicaset: ""
+    ip: "",
+    port: "",
+    dbname: "",
+    password: "",
+    user: "",
+    type: "mongodb+srv",
   },
 
   Services: {
