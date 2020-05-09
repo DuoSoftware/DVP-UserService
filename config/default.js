@@ -58,14 +58,14 @@ module.exports = {
     multi_login: true
   },
 
-  "DB": {
-    "Type":"postgres",
-    "User":"postgres",
-    "Password":"JH23&^%#mksDHS&!",
-    "Port":"5432",
-    "Host":"localhost",
-    "Database":"postgres"
-},
+  DB: {
+    Type: "postgres",
+    User: "",
+    Password: "",
+    Port: 5432,
+    Host: "",
+    Database: ""
+  },
 
   Redis: {
     mode: "instance", //instance, cluster, sentinel
