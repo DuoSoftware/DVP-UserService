@@ -12,7 +12,7 @@
     "crypto-js": "^4.0.0",
     "dvp-common": "^1.5.2",
     "dvp-dbmodels": "^3.4.0",
-    "dvp-healthcheck": "^1.0.3",
+    "dvp-healthcheck": "^1.0.6",
     "dvp-mongomodels": "^6.1.0",
     "errorhandler": "^1.5.1",
     "express": "^4.17.1",
