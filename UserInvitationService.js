@@ -1122,7 +1122,7 @@ var SenNotification = function(company, tenant, from, to, message, callback) {
     config.Services.notificationServiceHost,
     config.Services.notificationServiceVersion
   );
-  if (validator.isIP(config.Services.notificationServiceHost)) {
+  if (config.Services.dynamicPort || validator.isIP(config.Services.notificationServiceHost)) {
     serviceurl = util.format(
       "http://%s:%s/DVP/API/%s/NotificationService/Notification/initiate",
       config.Services.notificationServiceHost,
