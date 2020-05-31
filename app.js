@@ -7,14 +7,14 @@ var session = require("express-session");
 var cors = require("cors");
 var app = express();
 
-var logger = require("dvp-common/LogHandler/CommonLogHandler.js").logger;
+var logger = require("dvp-common-lite/LogHandler/CommonLogHandler.js").logger;
 var userService = require("./UserService.js");
 var clientService = require("./ClientService");
 var phoneConfig = require("./PhoneConfig");
 var config = require("config");
 var jwt = require("restify-jwt");
-var secret = require("dvp-common/Authentication/Secret.js");
-var authorization = require("dvp-common/Authentication/Authorization.js");
+var secret = require("dvp-common-lite/Authentication/Secret.js");
+var authorization = require("dvp-common-lite/Authentication/Authorization.js");
 var ActiveDirectory = require("./ActiveDirectoryService");
 var UserInvitationService = require("./UserInvitationService");
 var healthcheck = require("dvp-healthcheck/DBHealthChecker");

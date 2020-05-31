@@ -2,9 +2,9 @@
  * Created by a on 6/7/2016.
  */
 
-var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+var logger = require('dvp-common-lite/LogHandler/CommonLogHandler.js').logger;
 var Client = require('dvp-mongomodels/model/Client');
-var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
+var messageFormatter = require('dvp-common-lite/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 var FlakeIdGen = require('flake-idgen')
 var intformat = require('biguint-format')

@@ -1,7 +1,7 @@
-var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+var logger = require('dvp-common-lite/LogHandler/CommonLogHandler.js').logger;
 var PhoneConfig = require('dvp-mongomodels/model/PhoneConfig');
 var ChatConfig = require('dvp-mongomodels/model/ChatConfig');
-var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
+var messageFormatter = require('dvp-common-lite/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
 
 

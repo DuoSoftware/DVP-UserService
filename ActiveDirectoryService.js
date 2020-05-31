@@ -2,8 +2,8 @@
  * Created by Heshan.i on 6/27/2017.
  */
 
-var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
-var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
+var logger = require('dvp-common-lite/LogHandler/CommonLogHandler.js').logger;
+var messageFormatter = require('dvp-common-lite/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var activeDirectory = require('dvp-mongomodels/model/ActiveDirectory').ActiveDirectory;
 var CryptoJS = require("crypto-js");
 var util = require('util');
