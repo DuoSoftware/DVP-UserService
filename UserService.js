@@ -13,7 +13,7 @@ var config = require('config');
 var redis = require('ioredis');
 var bcrypt = require('bcryptjs');
 var DbConn = require('dvp-dbmodels');
-
+var auditTrailsHandler = require('dvp-common/AuditTrail/AuditTrailsHandler.js');
 
 
 var redisip = config.Redis.ip;
@@ -22,7 +22,35 @@ var redispass = config.Redis.password;
 var redismode = config.Redis.mode;
 var redisdb = config.Redis.db;
 
+function addAuditTrail(tenantId, companyId, iss, auditData) {
+    /*var auditData =  {
+     KeyProperty: keyProperty,
+     OldValue: auditTrails.OldValue,
+     NewValue: auditTrails.NewValue,
+     Description: auditTrails.Description,
+     Author: auditTrails.Author,
+     User: iss,
+     OtherData: auditTrails.OtherData,
+     ObjectType: auditTrails.ObjectType,
+     Action: auditTrails.Action,
+     Application: auditTrails.Application,
+     TenantId: tenantId,
+     CompanyId: companyId
+     }*/
 
+    try {
+        auditTrailsHandler.CreateAuditTrails(tenantId, companyId, iss, auditData, function (err, obj) {
+            if (err) {
+                var jsonString = messageFormatter.FormatMessage(err, "Fail", false, auditData);
+                logger.error('addAuditTrail -  Fail To Save Audit trail-[%s]', jsonString);
+            }
+        });
+    }
+    catch (ex) {
+        var jsonString = messageFormatter.FormatMessage(ex, "Fail", false, auditData);
+        logger.error('addAuditTrail -  insertion  failed-[%s]', jsonString);
+    }
+}
 
 var redisSetting =  {
     port:redisport,
@@ -540,6 +568,18 @@ function CreateUser(req, res){
                                      }
                                      res.end(jsonString);
                                      });*/
+                                    var auditData = {
+                                        KeyProperty: "UserName",
+                                        OldValue: {},
+                                        NewValue: user,
+                                        Description: "New User Created.",
+                                        Author: req.user.iss,
+                                        User: req.user.iss,
+                                        ObjectType: "User",
+                                        Action: "SAVE",
+                                        Application: "User Service"
+                                    };
+                                    addAuditTrail(tenant, company, req.user.iss, auditData);
 
                                     limitObj.currentAccess.push(user.username);
                                     Org.findOneAndUpdate({id: company, tenant: tenant},org, function(err, rOrg) {
@@ -662,6 +702,20 @@ function ReActivateUser(req, res){
 
 
                                                     if(updatedUser) {
+
+                                                        var auditData = {
+                                                            KeyProperty: "UserName",
+                                                            OldValue: userAccount,
+                                                            NewValue: updatedUser,
+                                                            Description: "User Updater",
+                                                            Author: req.user.iss,
+                                                            User: req.user.iss,
+                                                            ObjectType: "User",
+                                                            Action: "UPDATE",
+                                                            Application: "User Service"
+                                                        };
+                                                        addAuditTrail(tenant, company, req.user.iss, auditData);
+
                                                         limitObj.currentAccess.push(updatedUser.username);
                                                         Org.findOneAndUpdate({
                                                             id: company,
@@ -805,6 +859,21 @@ function UpdateUser(req, res){
             } else {
                 if(users)
                 {
+
+                    var auditData = {
+                        KeyProperty: "UserName",
+                        OldValue: {},
+                        NewValue: userAccount,
+                        Description: "User Updater",
+                        Author: req.user.iss,
+                        User: req.user.iss,
+                        ObjectType: "User",
+                        Action: "UPDATE",
+                        Application: "User Service"
+                    };
+                    addAuditTrail(tenant, company, req.user.iss, auditData);
+
+
                     jsonString = messageFormatter.FormatMessage(err, "Update User Successful", true, users);
                 }
                 else
@@ -2018,6 +2087,20 @@ function AddUserScopes(req, res){
                                     if (err) {
                                         jsonString = messageFormatter.FormatMessage(err, "Update user scope Failed", false, undefined);
                                     }else{
+
+                                        var auditData = {
+                                            KeyProperty: "UserName",
+                                            OldValue: {},
+                                            NewValue: rUsers,
+                                            Description: "User Updater",
+                                            Author: req.user.iss,
+                                            User: req.user.iss,
+                                            ObjectType: "User",
+                                            Action: "UPDATE",
+                                            Application: "User Service"
+                                        };
+                                        addAuditTrail(tenant, company, req.user.iss, auditData);
+
                                         jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", true, undefined);
                                     }
                                     res.end(jsonString);
@@ -2057,6 +2140,19 @@ function RemoveUserScopes(req, res){
 
 
         }else{
+
+            var auditData = {
+                KeyProperty: "UserName",
+                OldValue: {},
+                NewValue: users,
+                Description: "User Updater",
+                Author: req.user.iss,
+                User: req.user.iss,
+                ObjectType: "User",
+                Action: "UPDATE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
 
             jsonString = messageFormatter.FormatMessage(undefined, "Update user scope successfully", false, undefined);
 
@@ -2140,6 +2236,20 @@ function AddUserAppScopes(req, res){
                                                     if (err) {
                                                         jsonString = messageFormatter.FormatMessage(err, "Update client scope Failed", false, undefined);
                                                     } else {
+
+                                                        var auditData = {
+                                                            KeyProperty: "UserName",
+                                                            OldValue: adminUser,
+                                                            NewValue: rUser,
+                                                            Description: "User Updater",
+                                                            Author: req.user.iss,
+                                                            User: req.user.iss,
+                                                            ObjectType: "User",
+                                                            Action: "UPDATE",
+                                                            Application: "User Service"
+                                                        };
+                                                        addAuditTrail(tenant, company, req.user.iss, auditData);
+
                                                         jsonString = messageFormatter.FormatMessage(undefined, "Update client scope successfully", true, undefined);
                                                         //consoleAccessLimitObj.currentAccess.push(assignUser.username);
                                                         //consoleAccessLimitObj.currentAccess = UniqueArray(consoleAccessLimitObj.currentAccess);
@@ -2332,6 +2442,19 @@ function UpdateUserMetadata(req, res){
 
         }else{
 
+            var auditData = {
+                KeyProperty: "UserName",
+                OldValue: {},
+                NewValue: users,
+                Description: "User Updater",
+                Author: req.user.iss,
+                User: req.user.iss,
+                ObjectType: "User",
+                Action: "UPDATE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
+
             jsonString = messageFormatter.FormatMessage(err, "Update user meta Successful", true, undefined);
 
         }
@@ -2363,6 +2486,19 @@ function UpdateAppMetadata(req, res){
 
         }else{
 
+            var auditData = {
+                KeyProperty: "UserName",
+                OldValue: {},
+                NewValue: users,
+                Description: "User Updater",
+                Author: req.user.iss,
+                User: req.user.iss,
+                ObjectType: "User",
+                Action: "UPDATE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
+
             jsonString = messageFormatter.FormatMessage(err, "Update app meta Successful", true, undefined);
 
         }
@@ -2392,6 +2528,19 @@ function RemoveUserMetadata(req, res){
 
         }else{
 
+            var auditData = {
+                KeyProperty: "UserName",
+                OldValue: {},
+                NewValue: users,
+                Description: "User Updater",
+                Author: req.user.iss,
+                User: req.user.iss,
+                ObjectType: "User",
+                Action: "UPDATE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
+
             jsonString = messageFormatter.FormatMessage(undefined, "Remove user meta successfully", false, undefined);
 
         }
@@ -2418,6 +2567,19 @@ function RemoveAppMetadata(req, res){
 
 
         }else{
+
+            var auditData = {
+                KeyProperty: "UserName",
+                OldValue: {},
+                NewValue: users,
+                Description: "User Updater",
+                Author: req.user.iss,
+                User: req.user.iss,
+                ObjectType: "User",
+                Action: "UPDATE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
 
             jsonString = messageFormatter.FormatMessage(undefined, "Update app meta successfully", false, undefined);
 
@@ -2767,6 +2929,20 @@ function UpdateMyAppMetadata(req, res){
                             jsonString = messageFormatter.FormatMessage(err, "User save failed", false, undefined);
 
                         } else {
+
+                            var auditData = {
+                                KeyProperty: "UserName",
+                                OldValue: users,
+                                NewValue: user,
+                                Description: "User Updater",
+                                Author: req.user.iss,
+                                User: req.user.iss,
+                                ObjectType: "User",
+                                Action: "UPDATE",
+                                Application: "User Service"
+                            };
+                            addAuditTrail(tenant, company, req.user.iss, auditData);
+
                             jsonString = messageFormatter.FormatMessage(undefined, "User saved successfully", true, users.app_meta);
                         }
                         res.end(jsonString);
