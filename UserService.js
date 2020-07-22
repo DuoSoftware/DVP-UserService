@@ -705,7 +705,7 @@ function ReActivateUser(req, res){
 
                                                         var auditData = {
                                                             KeyProperty: "UserName",
-                                                            OldValue: userAccount,
+                                                            OldValue: user,
                                                             NewValue: updatedUser,
                                                             Description: "User Updater",
                                                             Author: req.user.iss,
@@ -863,7 +863,7 @@ function UpdateUser(req, res){
                     var auditData = {
                         KeyProperty: "UserName",
                         OldValue: {},
-                        NewValue: userAccount,
+                        NewValue: users,
                         Description: "User Updater",
                         Author: req.user.iss,
                         User: req.user.iss,
