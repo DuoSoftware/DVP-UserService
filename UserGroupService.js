@@ -9,8 +9,38 @@ var regex = require('regex');
 var util = require('util');
 var _ = require('lodash');
 var UserAccount = require('dvp-mongomodels/model/UserAccount');
+var auditTrailsHandler = require('dvp-common/AuditTrail/AuditTrailsHandler.js');
 //var ObjectId = mongoose.Types.ObjectId;
 
+function addAuditTrail(tenantId, companyId, iss, auditData) {
+    /*var auditData =  {
+     KeyProperty: keyProperty,
+     OldValue: auditTrails.OldValue,
+     NewValue: auditTrails.NewValue,
+     Description: auditTrails.Description,
+     Author: auditTrails.Author,
+     User: iss,
+     OtherData: auditTrails.OtherData,
+     ObjectType: auditTrails.ObjectType,
+     Action: auditTrails.Action,
+     Application: auditTrails.Application,
+     TenantId: tenantId,
+     CompanyId: companyId
+     }*/
+
+    try {
+        auditTrailsHandler.CreateAuditTrails(tenantId, companyId, iss, auditData, function (err, obj) {
+            if (err) {
+                var jsonString = messageFormatter.FormatMessage(err, "Fail", false, auditData);
+                logger.error('addAuditTrail -  Fail To Save Audit trail-[%s]', jsonString);
+            }
+        });
+    }
+    catch (ex) {
+        var jsonString = messageFormatter.FormatMessage(ex, "Fail", false, auditData);
+        logger.error('addAuditTrail -  insertion  failed-[%s]', jsonString);
+    }
+}
 
 /*
  function GetUserGroups(req, res){
@@ -624,6 +654,19 @@ function UpdateUserGroupMembers(req, res) {
                         jsonString = messageFormatter.FormatMessage(err, "Update User Group Member Failed", false, undefined);
                     } else {
 
+                        var auditData = {
+                            KeyProperty: "User Group ID",
+                            OldValue: {},
+                            NewValue: userAcount,
+                            Description: "User Group member update.",
+                            Author: req.user.iss,
+                            User: userAcount.user,
+                            ObjectType: "User",
+                            Action: "UPDATE",
+                            Application: "User Service"
+                        };
+                        addAuditTrail(tenant, company, req.user.iss, auditData);
+
                         jsonString = messageFormatter.FormatMessage(undefined, "Update User Group Member Successful", true, undefined);
                     }
                     res.end(jsonString);
@@ -665,6 +708,20 @@ function UpdateUserGroupSupervisors(req, res) {
                                 jsonString = messageFormatter.FormatMessage(errGroup, "Get Group Failed", false, undefined);
                             }
                             else {
+
+                                var auditData = {
+                                    KeyProperty: "User Group supervisors",
+                                    OldValue: {},
+                                    NewValue: resGroup,
+                                    Description: "User Group supervisor update.",
+                                    Author: req.user.iss,
+                                    User: resUserAccount.user,
+                                    ObjectType: "User Group",
+                                    Action: "UPDATE",
+                                    Application: "User Service"
+                                };
+                                addAuditTrail(tenant, company, req.user.iss, auditData);
+
                                 jsonString = messageFormatter.FormatMessage(undefined, "Update User Group Supervisors Successful", true, undefined);
                             }
 
@@ -747,6 +804,19 @@ function RemoveUserGroupMembers(req, res){
 
 
         }else{
+
+            var auditData = {
+                KeyProperty: "User Group ID",
+                OldValue: {},
+                NewValue: users,
+                Description: "Removed from User Group.",
+                Author: req.user.iss,
+                User: users.user,
+                ObjectType: "User",
+                Action: "DELETE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
 
             jsonString = messageFormatter.FormatMessage(undefined, "Remove User Group Member successfully", true, undefined);
 
