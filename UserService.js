@@ -7,6 +7,7 @@ var Console = require("dvp-mongomodels/model/Console");
 var UserTag = require("dvp-mongomodels/model/Tag").SimpleTag;
 var messageFormatter = require("dvp-common-lite/CommonMessageGenerator/ClientMessageJsonFormatter.js");
 var PublishToQueue = require("./Worker").PublishToQueue;
+var allscopes = require("./scopes.json");//added for user scope automation
 var util = require("util");
 var crypto = require("crypto");
 var config = require("config");
@@ -1286,6 +1287,44 @@ function CreateUser(req, res) {
                                         req.user.iss,
                                         auditData
                                       );
+
+
+                                        //scope update automation
+
+                                      UserAccount.findOneAndUpdate(
+                                        {
+                                          user: req.params.name,
+                                          company: company,
+                                          tenant: tenant
+                                        },
+                                        { $addToSet: { user_scopes: 
+                                          
+                                          allscopes.allagentscopes
+                                                                                                                                            
+                                        } },
+
+                                        function(err, rUsers) {
+                                          if (err) {
+                                            jsonString = messageFormatter.FormatMessage(
+                                              err,
+                                              "Update user scopes Failed",
+                                              false,
+                                              undefined
+                                            );
+                                          } else {
+                                                     
+                                            jsonString = messageFormatter.FormatMessage(
+                                              undefined,
+                                              "Update user scopes successfull",
+                                              true,
+                                              undefined
+                                            );
+                                          }
+                                          res.end(jsonString);
+                                        }
+                                      );
+
+
 
                                       limitObj.currentAccess.push(
                                         user.username
