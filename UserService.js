@@ -1287,223 +1287,222 @@ function CreateUser(req, res) {
                                         auditData
                                       );
 
-
                                         //scope update automation
 
                                       var agentscopes = [
                                         {
-                                          "scope": "myNavigation",
-                                          "read": true
+                                          scope: "myNavigation",
+                                          read: true
                                         }, {
-                                          "scope": "myUserProfile",
-                                          "read": true,
-                                          "write": true
+                                          scope: "myUserProfile",
+                                          read: true,
+                                          write: true
                                         }, {
-                                          "scope": "notification",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": false
+                                          scope: "notification",
+                                          read: true,
+                                          write: true,
+                                          delete: false
                                         }, {
-                                          "scope": "productivity",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "productivity",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "ardsresource",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "ardsresource",
+                                          read: true,
+                                          write: true,
+                                          delete: true
 
                                         }, {
-                                          "scope": "social",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "social",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "todo",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "todo",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "remind",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "remind",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "qualityassurance",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "qualityassurance",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "notice",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "notice",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "dialer",
-                                          "read": false,
-                                          "write": true,
-                                          "delete": false
+                                          scope: "dialer",
+                                          read: false,
+                                          write: true,
+                                          delete: false
                                         }, {
-                                          "scope": "requestmeta",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "requestmeta",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "template",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "template",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "sysmonitoring",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": false
+                                          scope: "sysmonitoring",
+                                          read: true,
+                                          write: true,
+                                          delete: false
                                         }, {
-                                          "scope": "Dispatch",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": false
+                                          scope: "Dispatch",
+                                          read: true,
+                                          write: true,
+                                          delete: false
                                         }, {
-                                          "scope": "breaktype",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "breaktype",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "agentDialer",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": false
+                                          scope: "agentDialer",
+                                          read: true,
+                                          write: true,
+                                          delete: false
                                         }, {
-                                          "scope": "extension",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "extension",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "fileservice",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": false
+                                          scope: "fileservice",
+                                          read: true,
+                                          write: true,
+                                          delete: false
                                         }, {
-                                          "scope": "externalUser",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "externalUser",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "userGroup",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "userGroup",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "user",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "user",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "ticket",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": false
+                                          scope: "ticket",
+                                          read: true,
+                                          write: true,
+                                          delete: false
                                         }, {
-                                          "scope": "tag",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "tag",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "timer",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "timer",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "ticketview",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "ticketview",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "forms",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "forms",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "tickettypes",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "tickettypes",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "ticketstatusflow",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "ticketstatusflow",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "engagement",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "engagement",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "inbox",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "inbox",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "events",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "events",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "integration",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": false
+                                          scope: "integration",
+                                          read: true,
+                                          write: true,
+                                          delete: false
                                         }, {
-                                          "scope": "dashboardevent",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "dashboardevent",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "dashboardgraph",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "dashboardgraph",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "queue",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "queue",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "article",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "article",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }, {
-                                          "scope": "AgentConsoleMenu",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "AgentConsoleMenu",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "SoftPhone",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "SoftPhone",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "SoftPhone_dialer",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "SoftPhone_dialer",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "cdr",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "cdr",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "sipuser",
-                                          "read": true,
-                                          "write": false,
-                                          "delete": false
+                                          scope: "sipuser",
+                                          read: true,
+                                          write: false,
+                                          delete: false
                                         }, {
-                                          "scope": "contact",
-                                          "read": true,
-                                          "write": true,
-                                          "delete": true
+                                          scope: "contact",
+                                          read: true,
+                                          write: true,
+                                          delete: true
                                         }
 
                                       ];
