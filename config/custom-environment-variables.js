@@ -58,7 +58,8 @@ module.exports = {
         "dbname":"SYS_MONGO_DB",
         "password":"SYS_MONGO_PASSWORD",
         "user":"SYS_MONGO_USER",
-        "replicaset" :"SYS_MONGO_REPLICASETNAME"
+        "replicaset" :"SYS_MONGO_REPLICASETNAME",
+        "type": "SYS_MONGO_TYPE"
     },
 
 
