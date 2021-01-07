@@ -26,6 +26,7 @@ module.exports = {
         "port": "SYS_REDIS_PORT",
         "user": "SYS_REDIS_USER",
         "password": "SYS_REDIS_PASSWORD",
+        "db": "SYS_REDIS_DB_CONFIG",
         "sentinels":{
             "hosts": "SYS_REDIS_SENTINEL_HOSTS",
             "port":"SYS_REDIS_SENTINEL_PORT",
@@ -41,6 +42,7 @@ module.exports = {
         "port": "SYS_REDIS_PORT",
         "user": "SYS_REDIS_USER",
         "password": "SYS_REDIS_PASSWORD",
+        "db": "SYS_REDIS_DB",
         "mode":"SYS_REDIS_MODE",
         "sentinels":{
             "hosts": "SYS_REDIS_SENTINEL_HOSTS",
@@ -58,7 +60,8 @@ module.exports = {
         "dbname":"SYS_MONGO_DB",
         "password":"SYS_MONGO_PASSWORD",
         "user":"SYS_MONGO_USER",
-        "replicaset" :"SYS_MONGO_REPLICASETNAME"
+        "replicaset" :"SYS_MONGO_REPLICASETNAME",
+        "type": "SYS_MONGO_TYPE"
     },
 
 
@@ -133,7 +136,10 @@ module.exports = {
         "clusterconfigserviceVersion": "SYS_CLUSTERCONFIG_VERSION",
         "billingserviceHost": "SYS_BILLINGSERVICE_HOST",
         "billingservicePort": "SYS_BILLINGSERVICE_PORT",
-        "billingserviceVersion": "SYS_BILLINGSERVICE_VERSION"
+        "billingserviceVersion": "SYS_BILLINGSERVICE_VERSION",
+        "notificationServiceHost": "SYS_NOTIFICATIONSERVICE_HOST",
+        "notificationServicePort": "SYS_NOTIFICATIONSERVICE_PORT",
+        "notificationServiceVersion": "SYS_NOTIFICATIONSERVICE_VERSION"
     },
 
     "Tenant": {
