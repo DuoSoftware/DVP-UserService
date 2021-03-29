@@ -10,7 +10,37 @@ var util = require('util');
 var _ = require('lodash');
 var UserAccount = require('dvp-mongomodels/model/UserAccount');
 //var ObjectId = mongoose.Types.ObjectId;
+var auditTrailsHandler = require('dvp-common/AuditTrail/AuditTrailsHandler.js');
 
+function addAuditTrail(tenantId, companyId, iss, auditData) {
+    /*var auditData =  {
+     KeyProperty: keyProperty,
+     OldValue: auditTrails.OldValue,
+     NewValue: auditTrails.NewValue,
+     Description: auditTrails.Description,
+     Author: auditTrails.Author,
+     User: iss,
+     OtherData: auditTrails.OtherData,
+     ObjectType: auditTrails.ObjectType,
+     Action: auditTrails.Action,
+     Application: auditTrails.Application,
+     TenantId: tenantId,
+     CompanyId: companyId
+     }*/
+
+    try {
+        auditTrailsHandler.CreateAuditTrails(tenantId, companyId, iss, auditData, function (err, obj) {
+            if (err) {
+                var jsonString = messageFormatter.FormatMessage(err, "Fail", false, auditData);
+                logger.error('addAuditTrail -  Fail To Save Audit trail-[%s]', jsonString);
+            }
+        });
+    }
+    catch (ex) {
+        var jsonString = messageFormatter.FormatMessage(ex, "Fail", false, auditData);
+        logger.error('addAuditTrail -  insertion  failed-[%s]', jsonString);
+    }
+}
 
 /*
  function GetUserGroups(req, res){
@@ -623,7 +653,54 @@ function UpdateUserGroupMembers(req, res) {
                     if (err) {
                         jsonString = messageFormatter.FormatMessage(err, "Update User Group Member Failed", false, undefined);
                     } else {
+                         var user = {
+                            active: userAcount.active,
+                            verified: userAcount.verified,
+                            multi_login: userAcount.multi_login,
+                            _id: userAcount._id,
+                            joined: userAcount.joined,
+                            user: userAcount.user,
+                            tenant: userAcount.tenant,
+                            company: userAcount.company,
+                            user_meta: userAcount.user_meta,
+                            created_at: userAcount.created_at,
+                            updated_at: userAcount.updated_at,
+                            resource_id: userAcount.resource_id,
+                            allowoutbound: userAcount.allowoutbound,
+                            veeryaccount: userAcount.veeryaccount,
+                            group: userAcount.group
+                        };
 
+                        var Newuser = {
+                            active: userAcount.active,
+                            verified: userAcount.verified,
+                            multi_login: userAcount.multi_login,
+                            _id: userAcount._id,
+                            joined: userAcount.joined,
+                            user: userAcount.user,
+                            tenant: userAcount.tenant,
+                            company: userAcount.company,
+                            user_meta: userAcount.user_meta,
+                            created_at: userAcount.created_at,
+                            updated_at: userAcount.updated_at,
+                            resource_id: userAcount.resource_id,
+                            allowoutbound: userAcount.allowoutbound,
+                            veeryaccount: userAcount.veeryaccount,
+                            group: group._id
+                        };
+                        var auditData = {
+                            KeyProperty: "Group",
+                            OldValue: user,
+                            NewValue: Newuser,
+                            Description: "User added to User Group",
+                            Author: req.user.iss,
+                            User: userAcount.user,
+                            ObjectType: "User",
+                            Action: "UPDATE",
+                            Application: "User Service"
+                        };
+                        addAuditTrail(tenant, company, req.user.iss, auditData);  
+                     
                         jsonString = messageFormatter.FormatMessage(undefined, "Update User Group Member Successful", true, undefined);
                     }
                     res.end(jsonString);
