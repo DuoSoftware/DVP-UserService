@@ -686,7 +686,7 @@ function UpdateUserGroupMembers(req, res) {
                             resource_id: userAcount.resource_id,
                             allowoutbound: userAcount.allowoutbound,
                             veeryaccount: userAcount.veeryaccount,
-                            group: group._id
+                            group: group.name
                         };
                         var auditData = {
                             KeyProperty: "Group",
@@ -817,13 +817,49 @@ function RemoveUserGroupMembers(req, res){
 
     //User.update({_id: user._id}, {$unset: {field: 1 }}, callback);
 
-    UserAccount.findOneAndUpdate({userref: req.params.user,company: company, tenant: tenant}, {$unset: {group: 1 }}, function(err, users) {
+
+
+
+    UserAccount.findOneAndUpdate({userref: req.params.user,company: company, tenant: tenant}, {$unset: {group: 1 }}, function(err, userAcount) {
         if (err) {
 
             jsonString = messageFormatter.FormatMessage(err, "Remove User Group Member Failed", false, undefined);
 
 
         }else{
+
+            var user = {
+                active: userAcount.active,
+                verified: userAcount.verified,
+                multi_login: userAcount.multi_login,
+                _id: userAcount._id,
+                joined: userAcount.joined,
+                user: userAcount.user,
+                tenant: userAcount.tenant,
+                company: userAcount.company,
+                user_meta: userAcount.user_meta,
+                created_at: userAcount.created_at,
+                updated_at: userAcount.updated_at,
+                resource_id: userAcount.resource_id,
+                allowoutbound: userAcount.allowoutbound,
+                veeryaccount: userAcount.veeryaccount,
+                group: userAcount.group
+            };
+
+            var Newuser = {};
+
+            var auditData = {
+                KeyProperty: "Group",
+                OldValue: user,
+                NewValue: Newuser,
+                Description: "User deleted from User Group",
+                Author: req.user.iss,
+                User: userAcount.user,
+                ObjectType: "User",
+                Action: "DELETE",
+                Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);  
 
             jsonString = messageFormatter.FormatMessage(undefined, "Remove User Group Member successfully", true, undefined);
 
