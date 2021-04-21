@@ -1038,7 +1038,27 @@ function DeleteUser(req, res) {
                 undefined
               );
             } else {
-              Org.findOne({ tenant: tenant, id: company }, function(err, org) {
+
+               var auditData = {
+                KeyProperty: "UserName",
+                OldValue: user,
+                NewValue: {},
+                Description: "User Deleted.",
+                Author: req.user.iss,
+                User: req.user.iss,
+                ObjectType: "User",
+                Action: "DELETE",
+                Application: "User Service"
+              };
+
+              addAuditTrail(
+                tenant,
+                company,
+                req.user.iss,
+                auditData
+              );
+
+              OrUserService.jsg.findOne({ tenant: tenant, id: company }, function(err, org) {
                 if (err) {
                   jsonString = messageFormatter.FormatMessage(
                     err,
@@ -1783,11 +1803,12 @@ function ReActivateUser(req, res) {
                           );
                         } else {
                           if (updatedUser) {
+				 
                             var auditData = {
                               KeyProperty: "UserName",
-                              OldValue: userAccount,
-                              NewValue: updatedUser,
-                              Description: "User Updater",
+                              OldValue: {},
+                              NewValue: "Reactivated user name: "+ updatedUser.user,
+                              Description: "User Reactivated",
                               Author: req.user.iss,
                               User: req.user.iss,
                               ObjectType: "User",
@@ -2336,7 +2357,7 @@ function GetMyrProfile(req, res) {
 }
 
 function UpdateMyUser(req, res) {
-  logger.debug("DVP-UserService.UpdateUser Internal method ");
+  logger.debug("DVP-UserService.UpdateMyUser Internal method ");
 
   var company = parseInt(req.user.company);
   var tenant = parseInt(req.user.tenant);
@@ -2584,12 +2605,15 @@ function GetUserProfile(req, res) {
 }
 
 function UpdateUserProfile(req, res) {
-  logger.debug("DVP-UserService.UpdateUser Internal method ");
+  logger.debug("DVP-UserService.UpdateUserProfile Internal method ");
 
   var company = parseInt(req.user.company);
   var tenant = parseInt(req.user.tenant);
-  var jsonString;
+  var jsonString;	
 
+  var query = { user: req.params.name, company: company, tenant: tenant };
+
+	
   if (req.body.username) {
     delete req.body.username;
   }
@@ -2636,52 +2660,136 @@ function UpdateUserProfile(req, res) {
   delete req.body.veeryaccount;
   delete req.body.allowoutbound;
 
-  User.findOneAndUpdate({ username: req.params.name }, req.body, function(
-    err,
-    users
-  ) {
+  var query = { user: req.params.name, company: company, tenant: tenant };
+
+UserAccount.findOne(query)
+  .populate("userref")
+  .exec(function(err, userAccount) {
     if (err) {
       jsonString = messageFormatter.FormatMessage(
         err,
-        "Update User Failed",
+        "Get User Account Failed",
         false,
         undefined
       );
-      res.end(jsonString);
     } else {
-      UserAccount.findOneAndUpdate(
-        {
-          user: req.params.name,
-          company: company,
-          tenant: tenant
-        },
-        userAccountObj,
-        function(err, userAccount) {
-          if (err) {
-            jsonString = messageFormatter.FormatMessage(
-              err,
-              "Update User Account Failed",
-              false,
-              undefined
-            );
-          } else {
-            jsonString = messageFormatter.FormatMessage(
-              err,
-              "Update User Successful",
-              true,
-              undefined
-            );
-          }
+     
+      var user = {};
+      if (userAccount && userAccount.userref) {
+        user = userAccount.userref.toObject();
+        user.veeryaccount = userAccount.veeryaccount;
+      }
 
-          res.end(jsonString);
-        }
+      jsonString = messageFormatter.FormatMessage(
+        err,
+        "Get User Successful",
+        true,
+        user
       );
+
+      User.findOneAndUpdate(
+        { 
+          username: req.params.name 
+        }, 
+        req.body, 
+        function(err,users) {
+   
+        if (err) {
+          jsonString = messageFormatter.FormatMessage(
+            err,
+            "Update User Failed",
+            false,
+            undefined
+          );
+          res.end(jsonString);
+        } else {
+          UserAccount.findOneAndUpdate(
+            {
+              user: req.params.name,
+              company: company,
+              tenant: tenant
+            },
+            userAccountObj,
+            function(err, userAcount) { 
+              if (err) {
+                jsonString = messageFormatter.FormatMessage(
+                  err,
+                  "Update User Account Failed",
+                  false,
+                  undefined
+                );
+              } else {
+
+                var oldObj = {
+                  firstname: user.firstname,
+                  lastname: user.lastname,
+                  nickname: user.name,
+                  birthday: user.birthday,
+                  contact: user.phoneNumber,
+                  address: user.address,
+                  avatar: user.avatar,
+                  title: user.title,
+                  gender: user.gender,
+                  locale: user.locale,
+		  veeryaccount: user.veeryaccount
+
+                };
+                   
+                var newObj = {
+                  firstname: req.body.firstname,
+                  lastname: req.body.lastname,
+                  nickname: req.body.name,
+                  birthday: req.body.birthday,
+                  contact: req.body.phoneNumber,
+                  address: req.body.address,
+                  avatar: req.body.avatar,
+                  title: req.body.title,
+                  gender: req.body.gender,
+                  locale: req.body.locale,
+                  veeryaccount: userAccountObj.veeryaccount
+
+                };    
+
+                 var auditData = {
+                  KeyProperty: "UserName",
+                  OldValue: oldObj,
+                  NewValue: newObj,
+                  Description: "User Updater",
+                  Author: req.user.iss,
+                  User: req.user.iss,
+                  ObjectType: "User",
+                  Action: "UPDATE",
+                  Application: "User Service"
+                };
+                addAuditTrail(tenant, company, req.user.iss, auditData);
+    
+                jsonString = messageFormatter.FormatMessage(
+                  err,
+                  "Update User Successful",
+                  true,
+                  undefined
+                );
+              }
+    
+              res.end(jsonString);
+            }
+          );
+        }
+      });
+
+
+
+
     }
+    res.end(jsonString);
   });
+
+
+
 }
 
 function UpdateMyUserProfile(req, res) {
-  logger.debug("DVP-UserService.UpdateUser Internal method ");
+  logger.debug("DVP-UserService.UpdateMyUserProfile Internal method ");
 
   var company = parseInt(req.user.company);
   var tenant = parseInt(req.user.tenant);
@@ -2757,6 +2865,20 @@ function UpdateMyUserProfile(req, res) {
               undefined
             );
           } else {
+
+             var auditData = {
+              KeyProperty: "UserName",
+              OldValue: userAccountObj,
+              NewValue: userAccount,
+              Description: "User Updater",
+              Author: req.user.iss,
+              User: req.user.iss,
+              ObjectType: "User",
+              Action: "UPDATE",
+              Application: "User Service"
+            };
+            addAuditTrail(tenant, company, req.user.iss, auditData);
+		  
             jsonString = messageFormatter.FormatMessage(
               err,
               "Update User Successful",
@@ -2954,7 +3076,7 @@ function GetARDSFriendlyContactObject(req, res) {
 }
 
 function UpdateUserProfileEmail(req, res) {
-  logger.debug("DVP-UserService.UpdateUser Internal method ");
+  logger.debug("DVP-UserService.UpdateUserProfileEmail Internal method ");
 
   var company = parseInt(req.user.company);
   var tenant = parseInt(req.user.tenant);
@@ -2989,7 +3111,7 @@ function UpdateUserProfileEmail(req, res) {
 }
 
 function UpdateUserProfileContact(req, res) {
-  logger.debug("DVP-UserService.UpdateUser Internal method ");
+  logger.debug("DVP-UserService.UpdateUserProfileContact Internal method ");
 
   var company = parseInt(req.user.company);
   var tenant = parseInt(req.user.tenant);
@@ -3066,7 +3188,7 @@ function RemoveMyUserProfileContact(req, res) {
 }
 
 function UpdateMyUserProfileContact(req, res) {
-  logger.debug("DVP-UserService.UpdateUser Internal method ");
+  logger.debug("DVP-UserService.UpdateMyUserProfileContact Internal method ");
 
   var company = parseInt(req.user.company);
   var tenant = parseInt(req.user.tenant);
@@ -3143,7 +3265,7 @@ function RemoveUserProfileContact(req, res) {
 }
 
 function UpdateUserProfilePhone(req, res) {
-  logger.debug("DVP-UserService.UpdateUser Internal method ");
+  logger.debug("DVP-UserService.UpdateUserProfilePhone Internal method ");
 
   var company = parseInt(req.user.company);
   var tenant = parseInt(req.user.tenant);
@@ -3205,6 +3327,25 @@ function SetUserProfileResourceId(req, res) {
           );
         } else {
           if (users) {
+
+            var auditData = {
+              KeyProperty: "UserName",
+              OldValue: {},
+              NewValue: {},
+              Description: "Sip acount mapped to user",
+              Author: req.user.iss,
+              User: req.user.iss,
+              ObjectType: "User",
+              Action: "UPDATE",
+              Application: "User Service"
+            };
+            addAuditTrail(
+              tenant,
+              company,
+              req.user.iss,
+              auditData
+            );
+
             jsonString = messageFormatter.FormatMessage(
               err,
               "Update User resource id Successful",
@@ -3862,6 +4003,7 @@ function RemoveUserScopes(req, res) {
 }
 
 function AddUserAppScopes(req, res) {
+  logger.debug("Entered function AddUserAppScopes");	
   var company = parseInt(req.user.company);
   var tenant = parseInt(req.user.tenant);
   var adminUserName = req.user.iss;
@@ -3921,6 +4063,7 @@ function AddUserAppScopes(req, res) {
                       );
                       res.end(jsonString);
                     } else {
+                      var oldassignUserScopes = assignUser.user_scopes;
                       if (
                         adminUser &&
                         adminUser.user_meta.role != undefined &&
@@ -4050,15 +4193,16 @@ function AddUserAppScopes(req, res) {
                                     undefined
                                   );
                                 } else {
+
                                   var auditData = {
                                     KeyProperty: "UserName",
-                                    OldValue: adminUser,
-                                    NewValue: rUser,
-                                    Description: "User Updater",
+                                    OldValue: {},
+                                    NewValue: assignUser.user_scopes,
+                                    Description: "User Scopes Added",
                                     Author: req.user.iss,
                                     User: req.user.iss,
                                     ObjectType: "User",
-                                    Action: "UPDATE",
+                                    Action: "SAVE",
                                     Application: "User Service"
                                   };
                                   addAuditTrail(
@@ -4209,6 +4353,26 @@ function RemoveUserAppScopes(req, res) {
                         undefined
                       );
                     } else {
+                    
+                      var auditData = {
+                        KeyProperty: "UserName",
+                        OldValue: user.user_scopes,
+                        NewValue: {},
+                        Description: "User Scopes Removed",
+                        Author: req.user.iss,
+                        User: req.user.iss,
+                        ObjectType: "User",
+                        Action: "DELETE",
+                        Application: "User Service"
+                      };
+                      addAuditTrail(
+                        tenant,
+                        company,
+                        req.user.iss,
+                        auditData
+                      );
+
+
                       jsonString = messageFormatter.FormatMessage(
                         undefined,
                         "Remove Navigation successfull",
@@ -4315,7 +4479,7 @@ function GetAppMeta(req, res) {
 }
 
 function UpdateUserMetadata(req, res) {
-  logger.debug("DVP-UserService.UpdateUser Internal method ");
+  logger.debug("DVP-UserService.UpdateUserMetadata Internal method ");
 
   var company = parseInt(req.user.company);
   var tenant = parseInt(req.user.tenant);
@@ -4365,7 +4529,7 @@ function UpdateUserMetadata(req, res) {
 }
 
 function UpdateAppMetadata(req, res) {
-  logger.debug("DVP-UserService.UpdateUser Internal method ");
+  logger.debug("DVP-UserService.UpdateAppMetadata Internal method ");
 
   var company = parseInt(req.user.company);
   var tenant = parseInt(req.user.tenant);
