@@ -4197,7 +4197,7 @@ function AddUserAppScopes(req, res) {
                                   var auditData = {
                                     KeyProperty: "UserName",
                                     OldValue: {},
-                                    NewValue: assignUser.user_scopes,
+                                    NewValue: req.body.menuItem,
                                     Description: "User Scopes Added",
                                     Author: req.user.iss,
                                     User: req.user.iss,
@@ -4356,7 +4356,7 @@ function RemoveUserAppScopes(req, res) {
                     
                       var auditData = {
                         KeyProperty: "UserName",
-                        OldValue: user.user_scopes,
+                        OldValue: req.params.navigation,
                         NewValue: {},
                         Description: "User Scopes Removed",
                         Author: req.user.iss,
