@@ -69,13 +69,13 @@ module.exports = {
 
   Redis: {
     mode: "instance", //instance, cluster, sentinel
-    ip: "ec2-18-189-192-150.us-east-2.compute.amazonaws.com",
+    ip: "",
     port: 6379,
-    user: "duo",
-    password: "DuoS123",
+    user: "",
+    password: "",
     db: 0,
     sentinels: {
-      hosts: "138.197.90.92,45.55.205.92,138.197.90.92",
+      hosts: "",
       port: 16389,
       name: "redis-cluster"
     }
@@ -84,12 +84,12 @@ module.exports = {
   Security: {
     ip: "ec2-18-189-192-150.us-east-2.compute.amazonaws.com",
     port: 6379,
-    user: "duo",
-    password: "DuoS123",
+    user: "",
+    password: "",
     db: 0,
     mode: "instance", //instance, cluster, sentinel
     sentinels: {
-      hosts: "138.197.90.92,45.55.205.92,138.197.90.92",
+      hosts: "",
       port: 16389,
       name: "redis-cluster"
     }
@@ -153,7 +153,7 @@ module.exports = {
     notificationServiceHost: "notificationservice.app1.veery.cloud",
     notificationServicePort: "8089",
     notificationServiceVersion: "1.0.0.0",
-    dynamicPort : false
+    dynamicPort : true
   },
 
   Tenant: {
