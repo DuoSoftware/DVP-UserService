@@ -1058,7 +1058,7 @@ function DeleteUser(req, res) {
                 auditData
               );
 
-              OrUserService.jsg.findOne({ tenant: tenant, id: company }, function(err, org) {
+              Org.findOne({ tenant: tenant, id: company }, function(err, org) {
                 if (err) {
                   jsonString = messageFormatter.FormatMessage(
                     err,
