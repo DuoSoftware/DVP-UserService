@@ -1040,7 +1040,7 @@ function DeleteUser(req, res) {
             } else {
 
                var auditData = {
-                KeyProperty: "UserName",
+                KeyProperty: "User",
                 OldValue: user,
                 NewValue: {},
                 Description: "User Deleted.",
@@ -1805,7 +1805,7 @@ function ReActivateUser(req, res) {
                           if (updatedUser) {
 				 
                             var auditData = {
-                              KeyProperty: "UserName",
+                              KeyProperty: "User",
                               OldValue: {},
                               NewValue: "Reactivated user name: "+ updatedUser.user,
                               Description: "User Reactivated",
@@ -2720,6 +2720,9 @@ UserAccount.findOne(query)
                 );
               } else {
 
+                var date = user.birthday;
+                user.birthday = date.toISOString().substring(0, 10);
+
                 var oldObj = {
                   firstname: user.firstname,
                   lastname: user.lastname,
@@ -2731,7 +2734,7 @@ UserAccount.findOne(query)
                   title: user.title,
                   gender: user.gender,
                   locale: user.locale,
-		  veeryaccount: user.veeryaccount
+		              veeryaccount: user.veeryaccount
 
                 };
                    
@@ -2748,19 +2751,21 @@ UserAccount.findOne(query)
                   locale: req.body.locale,
                   veeryaccount: userAccountObj.veeryaccount
 
-                };    
+                };  
 
+            
                  var auditData = {
-                  KeyProperty: "UserName",
+                  KeyProperty: "User Profile",
                   OldValue: oldObj,
                   NewValue: newObj,
-                  Description: "User Updater",
+                  Description: "User Profile Updated",
                   Author: req.user.iss,
                   User: req.user.iss,
                   ObjectType: "User",
                   Action: "UPDATE",
                   Application: "User Service"
-                };
+                };   
+
                 addAuditTrail(tenant, company, req.params.name, auditData);
     
                 jsonString = messageFormatter.FormatMessage(
@@ -2867,10 +2872,10 @@ function UpdateMyUserProfile(req, res) {
           } else {
 
              var auditData = {
-              KeyProperty: "UserName",
+              KeyProperty: "User Profile",
               OldValue: userAccountObj,
               NewValue: userAccount,
-              Description: "User Updater",
+              Description: "User Profile Updated",
               Author: req.user.iss,
               User: req.user.iss,
               ObjectType: "User",
@@ -3329,10 +3334,10 @@ function SetUserProfileResourceId(req, res) {
           if (users) {
 
             var auditData = {
-              KeyProperty: "UserName",
+              KeyProperty: "User Profile",
               OldValue: {},
               NewValue: {},
-              Description: "Sip acount mapped to user",
+              Description: "Sip account mapped to user",
               Author: req.user.iss,
               User: req.user.iss,
               ObjectType: "User",
@@ -4195,7 +4200,7 @@ function AddUserAppScopes(req, res) {
                                 } else {
 
                                   var auditData = {
-                                    KeyProperty: "UserName",
+                                    KeyProperty: "User Scopes",
                                     OldValue: {},
                                     NewValue: req.body.menuItem,
                                     Description: "User Scopes Added",
@@ -4355,7 +4360,7 @@ function RemoveUserAppScopes(req, res) {
                     } else {
                     
                       var auditData = {
-                        KeyProperty: "UserName",
+                        KeyProperty: "User Scopes",
                         OldValue: req.params.navigation,
                         NewValue: {},
                         Description: "User Scopes Removed",
