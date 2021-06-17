@@ -1054,7 +1054,7 @@ function DeleteUser(req, res) {
               addAuditTrail(
                 tenant,
                 company,
-                req.user.iss,
+                req.params.name,
                 auditData
               );
 
@@ -1818,7 +1818,7 @@ function ReActivateUser(req, res) {
                             addAuditTrail(
                               tenant,
                               company,
-                              req.user.iss,
+                              updatedUser.user,
                               auditData
                             );
 
@@ -2761,7 +2761,7 @@ UserAccount.findOne(query)
                   Action: "UPDATE",
                   Application: "User Service"
                 };
-                addAuditTrail(tenant, company, req.user.iss, auditData);
+                addAuditTrail(tenant, company, req.params.name, auditData);
     
                 jsonString = messageFormatter.FormatMessage(
                   err,
@@ -2877,7 +2877,7 @@ function UpdateMyUserProfile(req, res) {
               Action: "UPDATE",
               Application: "User Service"
             };
-            addAuditTrail(tenant, company, req.user.iss, auditData);
+            addAuditTrail(tenant, company, userName, auditData);
 		  
             jsonString = messageFormatter.FormatMessage(
               err,
@@ -3342,7 +3342,7 @@ function SetUserProfileResourceId(req, res) {
             addAuditTrail(
               tenant,
               company,
-              req.user.iss,
+              req.params.name,
               auditData
             );
 
@@ -4208,7 +4208,7 @@ function AddUserAppScopes(req, res) {
                                   addAuditTrail(
                                     tenant,
                                     company,
-                                    req.user.iss,
+                                    req.params.username,
                                     auditData
                                   );
 
@@ -4368,7 +4368,7 @@ function RemoveUserAppScopes(req, res) {
                       addAuditTrail(
                         tenant,
                         company,
-                        req.user.iss,
+                        req.params.username,
                         auditData
                       );
 
