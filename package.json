@@ -10,7 +10,7 @@
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "crypto-js": "^4.0.0",
-    "dvp-common": "^1.5.2",
+    "dvp-common": "^1.5.4",
     "dvp-common-lite": "^1.3.0",
     "dvp-dbmodels": "^3.4.0",
     "dvp-healthcheck": "^1.0.6",
