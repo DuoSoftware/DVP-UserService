@@ -1045,7 +1045,7 @@ function DeleteUser(req, res) {
                 NewValue: {},
                 Description: "User Deleted.",
                 Author: req.user.iss,
-                User: req.user.iss,
+                User: req.params.name,
                 ObjectType: "User",
                 Action: "DELETE",
                 Application: "User Service"
@@ -1054,7 +1054,7 @@ function DeleteUser(req, res) {
               addAuditTrail(
                 tenant,
                 company,
-                req.params.name,
+                req.user.iss,
                 auditData
               );
 
@@ -1810,7 +1810,7 @@ function ReActivateUser(req, res) {
                               NewValue: "Reactivated user name: "+ updatedUser.user,
                               Description: "User Reactivated",
                               Author: req.user.iss,
-                              User: req.user.iss,
+                              User: updatedUser.user,
                               ObjectType: "User",
                               Action: "UPDATE",
                               Application: "User Service"
@@ -1818,7 +1818,7 @@ function ReActivateUser(req, res) {
                             addAuditTrail(
                               tenant,
                               company,
-                              updatedUser.user,
+                              req.user.iss,
                               auditData
                             );
 
@@ -2760,13 +2760,13 @@ UserAccount.findOne(query)
                   NewValue: newObj,
                   Description: "User Profile Updated",
                   Author: req.user.iss,
-                  User: req.user.iss,
+                  User: req.params.name,
                   ObjectType: "User",
                   Action: "UPDATE",
                   Application: "User Service"
                 };   
 
-                addAuditTrail(tenant, company, req.params.name, auditData);
+                addAuditTrail(tenant, company, req.user.iss, auditData);
     
                 jsonString = messageFormatter.FormatMessage(
                   err,
@@ -2877,12 +2877,12 @@ function UpdateMyUserProfile(req, res) {
               NewValue: userAccount,
               Description: "User Profile Updated",
               Author: req.user.iss,
-              User: req.user.iss,
+              User: userName,
               ObjectType: "User",
               Action: "UPDATE",
               Application: "User Service"
             };
-            addAuditTrail(tenant, company, userName, auditData);
+            addAuditTrail(tenant, company, req.user.iss, auditData);
 		  
             jsonString = messageFormatter.FormatMessage(
               err,
@@ -3339,7 +3339,7 @@ function SetUserProfileResourceId(req, res) {
               NewValue: {},
               Description: "Sip account mapped to user",
               Author: req.user.iss,
-              User: req.user.iss,
+              User: req.params.name,
               ObjectType: "User",
               Action: "UPDATE",
               Application: "User Service"
@@ -3347,7 +3347,7 @@ function SetUserProfileResourceId(req, res) {
             addAuditTrail(
               tenant,
               company,
-              req.params.name,
+              req.user.iss,
               auditData
             );
 
@@ -4205,7 +4205,7 @@ function AddUserAppScopes(req, res) {
                                     NewValue: req.body.menuItem,
                                     Description: "User Scopes Added",
                                     Author: req.user.iss,
-                                    User: req.user.iss,
+                                    User: req.params.username,
                                     ObjectType: "User",
                                     Action: "SAVE",
                                     Application: "User Service"
@@ -4213,7 +4213,7 @@ function AddUserAppScopes(req, res) {
                                   addAuditTrail(
                                     tenant,
                                     company,
-                                    req.params.username,
+                                    req.user.iss,
                                     auditData
                                   );
 
@@ -4365,7 +4365,7 @@ function RemoveUserAppScopes(req, res) {
                         NewValue: {},
                         Description: "User Scopes Removed",
                         Author: req.user.iss,
-                        User: req.user.iss,
+                        User: req.params.username,
                         ObjectType: "User",
                         Action: "DELETE",
                         Application: "User Service"
@@ -4373,7 +4373,7 @@ function RemoveUserAppScopes(req, res) {
                       addAuditTrail(
                         tenant,
                         company,
-                        req.params.username,
+                        req.user.iss,
                         auditData
                       );
 
