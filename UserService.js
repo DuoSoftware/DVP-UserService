@@ -1290,12 +1290,12 @@ function CreateUser(req, res) {
                                       res.end(jsonString);
                                     } else {
                                       var auditData = {
-                                        KeyProperty: "UserName",
+                                        KeyProperty: "User",
                                         OldValue: {},
                                         NewValue: user,
                                         Description: "New User Created.",
                                         Author: req.user.iss,
-                                        User: req.user.iss,
+                                        User: user.username,
                                         ObjectType: "User",
                                         Action: "SAVE",
                                         Application: "User Service"
@@ -2719,9 +2719,11 @@ UserAccount.findOne(query)
                   undefined
                 );
               } else {
+          
+                var bdate = "" + user.birthday
+                bdate = bdate.toString();
+                user.birthday = bdate.substring(0, 10);
 
-                var date = user.birthday;
-                user.birthday = date.toISOString().substring(0, 10);
 
                 var oldObj = {
                   firstname: user.firstname,
